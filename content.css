@@ -1,0 +1,141 @@
+/* ── Clockify Salary Calculator — injected card ─────────────────────────────
+   Self-contained: does not rely on any Clockify CSS classes.
+   ─────────────────────────────────────────────────────────────────────────── */
+
+#csc-earnings-card {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 13px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 14px 16px 10px;
+  min-width: 190px;
+  max-width: 260px;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.07);
+  position: relative;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+/* Green top accent bar */
+#csc-earnings-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #16a34a 0%, #22c55e 100%);
+}
+
+/* ── Label row ─────────────────────────────────────────────────────────────── */
+#csc-earnings-card .csc-label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: #64748b;
+  margin-bottom: 8px;
+}
+
+#csc-earnings-card .csc-icon {
+  width: 12px; height: 12px;
+  stroke: #16a34a;
+  stroke-width: 2.5;
+  flex-shrink: 0;
+}
+
+/* ── Main row: net + % badge ───────────────────────────────────────────────── */
+#csc-earnings-card .csc-main-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+#csc-earnings-card .csc-net {
+  font-size: 22px;
+  font-weight: 800;
+  color: #16a34a;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+#csc-earnings-card .csc-gross {
+  font-size: 11px;
+  color: #94a3b8;
+  margin-top: 2px;
+}
+
+#csc-earnings-card .csc-pct-badge {
+  font-size: 11px;
+  font-weight: 700;
+  color: #16a34a;
+  background: #dcfce7;
+  border-radius: 6px;
+  padding: 3px 7px;
+  white-space: nowrap;
+  align-self: flex-start;
+  margin-top: 3px;
+}
+
+/* ── Progress bar ──────────────────────────────────────────────────────────── */
+#csc-earnings-card .csc-bar-track {
+  height: 5px;
+  background: #fee2e2;
+  border-radius: 99px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+#csc-earnings-card .csc-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #16a34a 0%, #22c55e 100%);
+  border-radius: 99px;
+}
+
+/* ── Currency conversion row ───────────────────────────────────────────────── */
+#csc-earnings-card .csc-convert-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 7px 0 5px;
+  border-top: 1px solid #f1f5f9;
+}
+
+#csc-earnings-card .csc-convert-item {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+#csc-earnings-card .csc-convert-lbl {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #94a3b8;
+}
+
+#csc-earnings-card .csc-convert-val {
+  font-size: 13px;
+  font-weight: 700;
+  color: #0288d1;
+}
+
+#csc-earnings-card .csc-convert-muted {
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 600;
+}
+
+/* ── Footer ────────────────────────────────────────────────────────────────── */
+#csc-earnings-card .csc-footer {
+  font-size: 10px;
+  color: #cbd5e1;
+  border-top: 1px solid #f8fafc;
+  padding-top: 6px;
+  margin-top: 4px;
+}

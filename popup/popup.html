@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Clockify Salary Calculator</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --blue:        #03a9f4;
+      --blue-dark:   #0288d1;
+      --blue-light:  #e1f5fe;
+      --green:       #16a34a;
+      --green-light: #dcfce7;
+      --red:         #dc2626;
+      --red-light:   #fee2e2;
+      --amber:       #d97706;
+      --amber-light: #fef3c7;
+      --bg:          #f1f5f9;
+      --card:        #ffffff;
+      --border:      #e2e8f0;
+      --text:        #1e293b;
+      --muted:       #64748b;
+      --label:       #475569;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-size: 13px;
+      background: var(--bg);
+      color: var(--text);
+      width: 360px;
+    }
+
+    /* ── Icons ────────────────────────────────────────────── */
+    .icon {
+      width: 14px; height: 14px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      flex-shrink: 0;
+      display: inline-block;
+      vertical-align: middle;
+    }
+    .icon-lg { width: 18px; height: 18px; stroke: white; }
+
+    /* ── Header ───────────────────────────────────────────── */
+    header {
+      background: linear-gradient(135deg, var(--blue) 0%, var(--blue-dark) 100%);
+      padding: 13px 16px;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .header-icon {
+      width: 34px; height: 34px;
+      background: rgba(255,255,255,0.2);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    header h1 { font-size: 14px; font-weight: 700; }
+    header p  { font-size: 11px; opacity: 0.8; margin-top: 1px; }
+
+    /* ── Cards ────────────────────────────────────────────── */
+    .card {
+      background: var(--card);
+      margin: 8px 8px 0;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      overflow: hidden;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+
+    .card-header {
+      padding: 7px 14px;
+      background: #f8fafc;
+      border-bottom: 1px solid var(--border);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      color: var(--blue-dark);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .card-body {
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    /* ── Fields ───────────────────────────────────────────── */
+    .field { display: flex; flex-direction: column; gap: 3px; }
+
+    .field label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--label);
+    }
+
+    .hint {
+      font-size: 10px;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+
+    .input-wrap { position: relative; }
+
+    .input-wrap .unit {
+      position: absolute;
+      right: 10px; top: 50%;
+      transform: translateY(-50%);
+      font-size: 11px; font-weight: 600;
+      color: var(--muted);
+      pointer-events: none;
+    }
+
+    input[type="number"], select {
+      width: 100%;
+      padding: 8px 10px;
+      border: 1.5px solid var(--border);
+      border-radius: 6px;
+      font-size: 13px;
+      font-family: inherit;
+      color: var(--text);
+      background: #fff;
+      transition: border-color 0.15s, box-shadow 0.15s;
+      outline: none;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+
+    input[type="number"]:focus, select:focus {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 3px rgba(3,169,244,0.15);
+    }
+
+    input[type="number"].has-unit { padding-right: 34px; }
+
+    select {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%2364748b' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+      padding-right: 28px;
+      cursor: pointer;
+    }
+
+    .row-2 { display: flex; gap: 8px; }
+    .row-2 .field { flex: 1; }
+    .row-2 .field.narrow { flex: 0 0 100px; }
+
+    .arrow-sep {
+      align-self: flex-end;
+      padding-bottom: 9px;
+      color: var(--muted);
+      flex-shrink: 0;
+    }
+
+    /* ── Rate fetch ───────────────────────────────────────── */
+    .rate-row { display: flex; gap: 8px; align-items: flex-end; }
+    .rate-row .field { flex: 1; }
+
+    .fetch-btn {
+      padding: 8px 11px;
+      border: 1.5px solid var(--blue);
+      border-radius: 6px;
+      font-size: 11px; font-weight: 700;
+      color: var(--blue);
+      background: #fff;
+      cursor: pointer;
+      white-space: nowrap;
+      flex-shrink: 0;
+      display: flex; align-items: center; gap: 5px;
+      transition: background 0.15s;
+      font-family: inherit;
+    }
+    .fetch-btn:hover  { background: var(--blue-light); }
+    .fetch-btn.loading { opacity: 0.55; pointer-events: none; }
+
+    #rate-status {
+      font-size: 10px; color: var(--muted);
+      min-height: 14px;
+    }
+    #rate-status.ok    { color: var(--green); }
+    #rate-status.error { color: var(--red); }
+
+    /* ── Simulation ───────────────────────────────────────── */
+    #sim-card { margin-bottom: 0; }
+
+    .sim-hours-row {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+    .sim-hours-row .field { flex: 1; }
+
+    .sim-presets {
+      display: flex;
+      gap: 4px;
+      align-self: flex-end;
+      padding-bottom: 1px;
+    }
+    .sim-preset {
+      padding: 7px 9px;
+      border: 1.5px solid var(--border);
+      border-radius: 6px;
+      font-size: 11px; font-weight: 600;
+      color: var(--muted);
+      background: #fff;
+      cursor: pointer;
+      transition: border-color 0.12s, color 0.12s, background 0.12s;
+      font-family: inherit;
+      white-space: nowrap;
+    }
+    .sim-preset:hover  { border-color: var(--blue); color: var(--blue); }
+    .sim-preset.active { border-color: var(--blue); background: var(--blue-light); color: var(--blue-dark); }
+
+    #sim-body { padding: 10px 14px 12px; }
+
+    #sim-empty {
+      text-align: center; font-size: 11px;
+      color: var(--muted); padding: 8px 0;
+    }
+
+    /* Waterfall rows */
+    .sim-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      padding: 4px 0;
+      gap: 8px;
+    }
+
+    .sim-lbl {
+      font-size: 11px; color: var(--muted);
+      display: flex; align-items: center; gap: 5px;
+    }
+    .sim-lbl strong { color: var(--text); font-size: 12px; }
+
+    .sim-val {
+      font-size: 13px; font-weight: 700;
+      color: var(--text);
+      white-space: nowrap;
+    }
+    .sim-val.neg    { color: var(--red); }
+    .sim-val.amber  { color: var(--amber); }
+    .sim-val.green  { color: var(--green); font-size: 15px; }
+
+    .sim-deductions {
+      border-left: 2px solid #f1f5f9;
+      margin-left: 6px;
+      padding-left: 10px;
+    }
+
+    .sim-divider {
+      border: none; border-top: 1.5px solid var(--border);
+      margin: 4px 0;
+    }
+
+    /* Bar */
+    .sim-bar-wrap {
+      margin-top: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .sim-bar-track {
+      flex: 1;
+      height: 6px;
+      background: var(--red-light);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+    .sim-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--green), #22c55e);
+      border-radius: 99px;
+      transition: width 0.3s ease;
+    }
+    .sim-bar-label {
+      font-size: 11px; font-weight: 700;
+      color: var(--green); white-space: nowrap;
+    }
+
+    .sim-converted {
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px solid #f1f5f9;
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+    }
+    .sim-converted .sim-lbl { font-size: 11px; }
+    .sim-converted .sim-val { font-size: 12px; color: var(--blue-dark); }
+
+    /* badges */
+    .badge {
+      display: inline-block;
+      padding: 1px 5px;
+      border-radius: 20px;
+      font-size: 9px; font-weight: 700;
+      background: #f1f5f9; color: var(--muted);
+      vertical-align: middle;
+    }
+    .badge.red   { background: var(--red-light); color: var(--red); }
+    .badge.amber { background: var(--amber-light); color: var(--amber); }
+    .badge.green { background: var(--green-light); color: var(--green); }
+    .badge.blue  { background: var(--blue-light); color: var(--blue-dark); }
+
+    /* ── Save ─────────────────────────────────────────────── */
+    .save-area {
+      padding: 8px 8px 10px;
+      display: flex; flex-direction: column; gap: 5px;
+    }
+
+    .save-btn {
+      width: 100%;
+      padding: 11px;
+      background: var(--blue); color: #fff;
+      border: none; border-radius: 8px;
+      font-size: 13px; font-weight: 700;
+      cursor: pointer; font-family: inherit;
+      transition: background 0.15s, transform 0.1s;
+      letter-spacing: 0.02em;
+    }
+    .save-btn:hover  { background: var(--blue-dark); }
+    .save-btn:active { transform: scale(0.99); }
+
+    #saved-msg {
+      text-align: center;
+      font-size: 11px; font-weight: 600; color: var(--green);
+      min-height: 15px; opacity: 0;
+      transition: opacity 0.2s;
+      display: flex; align-items: center; justify-content: center; gap: 5px;
+    }
+    #saved-msg.visible { opacity: 1; }
+  </style>
+</head>
+<body>
+
+  <!-- SVG icon defs (hidden) -->
+  <svg style="display:none">
+    <symbol id="ico-dollar" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="12" y1="1" x2="12" y2="23"/>
+      <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+    </symbol>
+    <symbol id="ico-clock" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="10"/>
+      <polyline points="12 6 12 12 16 14"/>
+    </symbol>
+    <symbol id="ico-minus-circle" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="10"/>
+      <line x1="8" y1="12" x2="16" y2="12"/>
+    </symbol>
+    <symbol id="ico-refresh-cw" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="23 4 23 10 17 10"/>
+      <polyline points="1 20 1 14 7 14"/>
+      <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+    </symbol>
+    <symbol id="ico-bar-chart" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="18" y1="20" x2="18" y2="10"/>
+      <line x1="12" y1="20" x2="12" y2="4"/>
+      <line x1="6" y1="20" x2="6" y2="14"/>
+      <line x1="2" y1="20" x2="22" y2="20"/>
+    </symbol>
+    <symbol id="ico-zap" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+    </symbol>
+    <symbol id="ico-check" viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="20 6 9 17 4 12"/>
+    </symbol>
+    <symbol id="ico-trending-up" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
+      <polyline points="17 6 23 6 23 12"/>
+    </symbol>
+  </svg>
+
+  <header>
+    <div class="header-icon">
+      <svg class="icon-lg" viewBox="0 0 24 24"><use href="#ico-trending-up"/></svg>
+    </div>
+    <div>
+      <h1>Clockify Salary Calculator</h1>
+      <p>Configure your earnings display on the dashboard</p>
+    </div>
+  </header>
+
+  <form id="settings-form">
+
+    <!-- Hourly rate -->
+    <div class="card">
+      <div class="card-header">
+        <svg class="icon" viewBox="0 0 24 24"><use href="#ico-clock"/></svg>
+        Hourly Rate
+      </div>
+      <div class="card-body">
+        <div class="row-2">
+          <div class="field">
+            <label for="hourly-rate">Rate</label>
+            <div class="input-wrap">
+              <input type="number" id="hourly-rate" placeholder="80" min="0" step="0.01" class="has-unit" />
+              <span class="unit" id="rate-unit">€</span>
+            </div>
+          </div>
+          <div class="field narrow">
+            <label for="paid-currency">Currency</label>
+            <select id="paid-currency"></select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Deductions -->
+    <div class="card">
+      <div class="card-header">
+        <svg class="icon" viewBox="0 0 24 24"><use href="#ico-minus-circle"/></svg>
+        Deductions
+      </div>
+      <div class="card-body">
+        <div class="field">
+          <label for="social-charges">Social charges (%)</label>
+          <div class="input-wrap">
+            <input type="number" id="social-charges" placeholder="24.6" min="0" max="100" step="0.1" class="has-unit" />
+            <span class="unit">%</span>
+          </div>
+          <span class="hint">Deducted first on gross CA (BNC / SSI 2025: 24.6 %).</span>
+        </div>
+        <div class="field">
+          <label for="prof-expense">Professional expense deduction (%)</label>
+          <div class="input-wrap">
+            <input type="number" id="prof-expense" placeholder="0" min="0" max="100" step="0.1" class="has-unit" />
+            <span class="unit">%</span>
+          </div>
+          <span class="hint">Micro-BNC abattement: 34 % — not applicable with versement lib&eacute;ratoire.</span>
+        </div>
+        <div class="field">
+          <label for="tax-rate">Income tax (%)</label>
+          <div class="input-wrap">
+            <input type="number" id="tax-rate" placeholder="2.2" min="0" max="100" step="0.1" class="has-unit" />
+            <span class="unit">%</span>
+          </div>
+          <span class="hint">Versement lib&eacute;ratoire BNC: 2.2 %. TMI classique: 11&ndash;45 %.</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Currency conversion -->
+    <div class="card">
+      <div class="card-header">
+        <svg class="icon" viewBox="0 0 24 24"><use href="#ico-refresh-cw"/></svg>
+        Currency Conversion
+      </div>
+      <div class="card-body">
+        <div class="row-2" style="align-items:flex-end">
+          <div class="field">
+            <label>Paid in</label>
+            <select id="paid-currency-display" disabled></select>
+          </div>
+          <span class="arrow-sep">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+          </span>
+          <div class="field">
+            <label for="receive-currency">Receive in</label>
+            <select id="receive-currency"></select>
+          </div>
+        </div>
+        <div class="rate-row">
+          <div class="field">
+            <label for="exchange-rate">Exchange rate</label>
+            <input type="number" id="exchange-rate" placeholder="1.0000" min="0" step="0.0001" />
+          </div>
+          <button type="button" id="fetch-rate-btn" class="fetch-btn">
+            <svg class="icon" viewBox="0 0 24 24"><use href="#ico-zap"/></svg>
+            Live rate
+          </button>
+        </div>
+        <div id="rate-status"></div>
+      </div>
+    </div>
+
+  </form>
+
+  <!-- Simulation -->
+  <div class="card" id="sim-card">
+    <div class="card-header">
+      <svg class="icon" viewBox="0 0 24 24"><use href="#ico-bar-chart"/></svg>
+      Simulation
+    </div>
+    <div class="card-body" style="padding-bottom:0">
+      <div class="sim-hours-row">
+        <div class="field">
+          <label for="sim-hours">Hours to simulate</label>
+          <div class="input-wrap">
+            <input type="number" id="sim-hours" placeholder="40" min="0" step="0.5" class="has-unit" value="40" />
+            <span class="unit">h</span>
+          </div>
+        </div>
+        <div class="sim-presets">
+          <button type="button" class="sim-preset" data-h="1">1h</button>
+          <button type="button" class="sim-preset" data-h="8">1d</button>
+          <button type="button" class="sim-preset active" data-h="40">1w</button>
+          <button type="button" class="sim-preset" data-h="160">1m</button>
+        </div>
+      </div>
+    </div>
+    <div id="sim-body">
+      <div id="sim-empty">Configure your hourly rate to see the simulation.</div>
+    </div>
+  </div>
+
+  <div class="save-area">
+    <button type="submit" form="settings-form" class="save-btn">Save settings</button>
+    <div id="saved-msg">
+      <svg class="icon" viewBox="0 0 24 24" style="stroke:var(--green)"><use href="#ico-check"/></svg>
+      Saved — the dashboard will update automatically.
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
