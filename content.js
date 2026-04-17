@@ -119,12 +119,37 @@ function tryInject() {
   );
 }
 
+// ── SPA navigation detection ──────────────────────────────────────────────────
+
+function onNavigate() {
+  if (!location.pathname.startsWith('/dashboard')) {
+    document.getElementById(CARD_ID)?.remove();
+    lastTimeText = '';
+    return;
+  }
+  lastTimeText = '';
+  tryInject();
+}
+
+['pushState', 'replaceState'].forEach((method) => {
+  const original = history[method];
+  history[method] = function (...args) {
+    const result = original.apply(this, args);
+    window.dispatchEvent(new Event('locationchange'));
+    return result;
+  };
+});
+
+window.addEventListener('popstate', onNavigate);
+window.addEventListener('locationchange', onNavigate);
+
 // ── MutationObserver ──────────────────────────────────────────────────────────
 
 let lastTimeText = '';
 let scheduled    = false;
 
 const observer = new MutationObserver(() => {
+  if (!location.pathname.startsWith('/dashboard')) return;
   if (scheduled) return;
   scheduled = true;
   requestAnimationFrame(() => {
@@ -141,7 +166,7 @@ const observer = new MutationObserver(() => {
 
 observer.observe(document.body, { childList: true, subtree: true, characterData: true });
 
-tryInject();
+if (location.pathname.startsWith('/dashboard')) tryInject();
 
 // ── Settings update from popup ────────────────────────────────────────────────
 

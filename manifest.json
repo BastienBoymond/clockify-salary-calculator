@@ -13,7 +13,7 @@
   },
   "content_scripts": [
     {
-      "matches": ["https://app.clockify.me/dashboard*"],
+      "matches": ["https://app.clockify.me/*"],
       "js": ["content.js"],
       "css": ["content.css"],
       "run_at": "document_idle"
