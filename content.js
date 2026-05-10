@@ -168,11 +168,45 @@ observer.observe(document.body, { childList: true, subtree: true, characterData:
 
 if (location.pathname.startsWith('/dashboard')) tryInject();
 
+// ── Project extraction ────────────────────────────────────────────────────────
+
+function extractProjects() {
+  const results = [];
+
+  // Clockify dashboard renders a horizontal bar chart table for the project breakdown.
+  // Each <tr> has the project name in a span[title] and the duration in td.cl-w-10 > span.
+  const rows = document.querySelectorAll(
+    'table.cl-main-horizontal-chart-container tbody tr'
+  );
+
+  for (const row of rows) {
+    const nameSpan = row.querySelector(
+      'td.cl-main-horizontal-chart-container--label span[title]'
+    );
+    const timeSpan = row.querySelector('td.cl-w-10 span');
+    if (!nameSpan || !timeSpan) continue;
+
+    // title attr = "Project - Client"; keep only the project part (before " - ")
+    const fullTitle = nameSpan.getAttribute('title')?.trim() || '';
+    const name      = fullTitle.split(' - ')[0].trim() || fullTitle;
+    const timeText  = timeSpan.textContent.trim();
+    const hours     = parseTime(timeText);
+
+    if (!name || hours <= 0) continue;
+    results.push({ name, timeText, hours });
+  }
+
+  return results;
+}
+
 // ── Settings update from popup ────────────────────────────────────────────────
 
-chrome.runtime.onMessage.addListener((msg) => {
+chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   if (msg.type === 'SETTINGS_UPDATED') {
     lastTimeText = '';
     tryInject();
+  }
+  if (msg.type === 'GET_PROJECTS') {
+    sendResponse({ projects: extractProjects() });
   }
 });

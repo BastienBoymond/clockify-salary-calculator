@@ -13,6 +13,14 @@ const CURRENCY_SYMBOLS = {
   SEK:'kr', NOK:'kr', DKK:'kr', PLN:'zł', HUF:'Ft', CZK:'Kč',
 };
 
+const INVOICE_KEYS = [
+  'inv_name','inv_address','inv_city','inv_country','inv_phone','inv_email','inv_siret',
+  'inv_clientName','inv_clientAddress','inv_clientCity','inv_clientCountry',
+  'inv_bank','inv_swift','inv_iban',
+  'inv_opType','inv_paymentDays','inv_legalNote','inv_legalStatus',
+  'inv_lastNumber',
+];
+
 // ── DOM refs ──────────────────────────────────────────────────────────────────
 
 const paidCurrencyEl        = document.getElementById('paid-currency');
@@ -30,6 +38,20 @@ const simHoursEl            = document.getElementById('sim-hours');
 const form                  = document.getElementById('settings-form');
 const savedMsg              = document.getElementById('saved-msg');
 const simBody               = document.getElementById('sim-body');
+const generateBtn           = document.getElementById('generate-btn');
+const invStatus             = document.getElementById('inv-status');
+
+// ── Tab switching ─────────────────────────────────────────────────────────────
+
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const tab = btn.dataset.tab;
+    document.getElementById('panel-settings').style.display = tab === 'settings' ? '' : 'none';
+    document.getElementById('panel-invoice').style.display  = tab === 'invoice'  ? '' : 'none';
+  });
+});
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -96,14 +118,12 @@ function renderSimulation() {
 
   let html = '<div style="padding:10px 14px 12px">';
 
-  // Gross
   html += `
     <div class="sim-row">
       <span class="sim-lbl">Gross <span class="badge">${hours} h</span></span>
       <span class="sim-val">${fmt(c.gross, paid)}</span>
     </div>`;
 
-  // Deductions block
   html += '<div class="sim-deductions">';
 
   if (c.socialPct > 0) {
@@ -130,9 +150,8 @@ function renderSimulation() {
       </div>`;
   }
 
-  html += '</div>'; // /sim-deductions
+  html += '</div>';
 
-  // Net
   html += `
     <hr class="sim-divider" />
     <div class="sim-row">
@@ -140,7 +159,6 @@ function renderSimulation() {
       <span class="sim-val green">${fmt(c.net, paid)}</span>
     </div>`;
 
-  // Bar
   html += `
     <div class="sim-bar-wrap">
       <div class="sim-bar-track">
@@ -149,7 +167,6 @@ function renderSimulation() {
       <span class="sim-bar-label">${netPct.toFixed(1)}% of gross</span>
     </div>`;
 
-  // Currency conversion
   if (!same) {
     html += `
       <div class="sim-converted">
@@ -166,10 +183,49 @@ function renderSimulation() {
   simBody.innerHTML = html;
 }
 
+// ── Invoice settings helpers ──────────────────────────────────────────────────
+
+const INV_FIELD_MAP = {
+  'inv_name':            'inv-name',
+  'inv_address':         'inv-address',
+  'inv_city':            'inv-city',
+  'inv_country':         'inv-country',
+  'inv_phone':           'inv-phone',
+  'inv_email':           'inv-email',
+  'inv_siret':           'inv-siret',
+  'inv_clientName':      'inv-client-name',
+  'inv_clientAddress':   'inv-client-address',
+  'inv_clientCity':      'inv-client-city',
+  'inv_clientCountry':   'inv-client-country',
+  'inv_bank':            'inv-bank',
+  'inv_swift':           'inv-swift',
+  'inv_iban':            'inv-iban',
+  'inv_opType':          'inv-op-type',
+  'inv_paymentDays':     'inv-payment-days',
+  'inv_legalNote':       'inv-legal-note',
+  'inv_legalStatus':     'inv-legal-status',
+};
+
+function readInvoiceFields() {
+  const data = {};
+  for (const [key, id] of Object.entries(INV_FIELD_MAP)) {
+    data[key] = document.getElementById(id)?.value || '';
+  }
+  return data;
+}
+
+function fillInvoiceFields(data) {
+  for (const [key, id] of Object.entries(INV_FIELD_MAP)) {
+    const el = document.getElementById(id);
+    if (el && data[key] != null) el.value = data[key];
+  }
+}
+
 // ── Init: load stored settings ────────────────────────────────────────────────
 
 chrome.storage.sync.get(
-  ['hourlyRate', 'paidCurrency', 'receiveCurrency', 'socialCharges', 'profExpense', 'taxRate', 'exchangeRate'],
+  ['hourlyRate', 'paidCurrency', 'receiveCurrency', 'socialCharges', 'profExpense', 'taxRate', 'exchangeRate',
+   ...INVOICE_KEYS],
   (data) => {
     const paid    = data.paidCurrency    || 'EUR';
     const receive = data.receiveCurrency || 'EUR';
@@ -185,6 +241,8 @@ chrome.storage.sync.get(
     if (data.profExpense   != null) profExpenseEl.value   = data.profExpense;
     if (data.taxRate       != null) taxRateEl.value       = data.taxRate;
     if (data.exchangeRate  != null) exchangeRateEl.value  = data.exchangeRate;
+
+    fillInvoiceFields(data);
 
     renderSimulation();
   }
@@ -255,7 +313,7 @@ fetchRateBtn.addEventListener('click', async () => {
   }
 });
 
-// ── Save ──────────────────────────────────────────────────────────────────────
+// ── Save settings ─────────────────────────────────────────────────────────────
 
 form.addEventListener('submit', (e) => {
   e.preventDefault();
@@ -280,4 +338,73 @@ form.addEventListener('submit', (e) => {
       });
     });
   });
+});
+
+// ── Generate invoice ──────────────────────────────────────────────────────────
+
+function showInvStatus(msg, type = 'ok') {
+  invStatus.textContent = msg;
+  invStatus.className   = `visible ${type}`;
+  if (type === 'ok') setTimeout(() => { invStatus.className = ''; }, 4000);
+}
+
+generateBtn.addEventListener('click', async () => {
+  generateBtn.classList.add('loading');
+  invStatus.className = '';
+
+  try {
+    // Save invoice settings first
+    const invData = readInvoiceFields();
+    await new Promise(r => chrome.storage.sync.set(invData, r));
+
+    // Try to get projects from a Clockify tab (active first, then any open tab)
+    let projects = [];
+    const [activeTab] = await new Promise(r => chrome.tabs.query({ active: true, currentWindow: true }, r));
+    const clockifyTabs = await new Promise(r => chrome.tabs.query({ url: 'https://app.clockify.me/*' }, r));
+
+    const clockifyTab = activeTab?.url?.includes('clockify.me')
+      ? activeTab
+      : clockifyTabs[0] || null;
+
+    if (clockifyTab) {
+      try {
+        const resp = await chrome.tabs.sendMessage(clockifyTab.id, { type: 'GET_PROJECTS' });
+        projects = resp?.projects || [];
+      } catch {
+        // Content script not ready on this tab
+      }
+    }
+
+    // Compute next invoice number
+    const stored     = await new Promise(r => chrome.storage.sync.get('inv_lastNumber', r));
+    const lastNumber = stored.inv_lastNumber || 0;
+    const nextNumber = lastNumber + 1;
+
+    const today = new Date().toISOString().split('T')[0];
+
+    // Pack current invoice data for the invoice page
+    await new Promise(r => chrome.storage.local.set({
+      inv_current: {
+        projects,
+        date:            today,
+        number:          nextNumber,
+        rate:            parseFloat(hourlyRateEl.value)   || 0,
+        currency:        paidCurrencyEl.value,
+        receiveCurrency: receiveCurrencyEl.value,
+        bceRate:         parseFloat(exchangeRateEl.value) || 1,
+      },
+    }, r));
+
+    // Persist incremented number
+    await new Promise(r => chrome.storage.sync.set({ inv_lastNumber: nextNumber }, r));
+
+    // Open invoice page
+    chrome.tabs.create({ url: chrome.runtime.getURL('invoice/invoice.html') });
+
+    showInvStatus(`Facture #${nextNumber} générée — onglet ouvert.`);
+  } catch (err) {
+    showInvStatus(`Erreur : ${err.message}`, 'error');
+  } finally {
+    generateBtn.classList.remove('loading');
+  }
 });

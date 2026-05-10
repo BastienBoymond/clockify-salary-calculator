@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
   <meta charset="UTF-8" />
   <title>Clockify Salary Calculator</title>
@@ -30,6 +30,8 @@
       background: var(--bg);
       color: var(--text);
       width: 360px;
+      max-height: 90vh;
+      overflow-y: auto;
     }
 
     /* ── Icons ────────────────────────────────────────────── */
@@ -64,6 +66,35 @@
     }
     header h1 { font-size: 14px; font-weight: 700; }
     header p  { font-size: 11px; opacity: 0.8; margin-top: 1px; }
+
+    /* ── Tabs ─────────────────────────────────────────────── */
+    .tabs {
+      display: flex;
+      background: var(--card);
+      border-bottom: 2px solid var(--border);
+      padding: 0 8px;
+    }
+    .tab-btn {
+      padding: 10px 14px;
+      border: none;
+      background: none;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--muted);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -2px;
+      transition: color 0.15s, border-color 0.15s;
+      font-family: inherit;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .tab-btn.active {
+      color: var(--blue-dark);
+      border-bottom-color: var(--blue);
+    }
+    .tab-btn:hover:not(.active) { color: var(--text); }
 
     /* ── Cards ────────────────────────────────────────────── */
     .card {
@@ -122,7 +153,7 @@
       pointer-events: none;
     }
 
-    input[type="number"], select {
+    input[type="number"], input[type="text"], input[type="email"], input[type="tel"], select {
       width: 100%;
       padding: 8px 10px;
       border: 1.5px solid var(--border);
@@ -137,7 +168,8 @@
       appearance: none;
     }
 
-    input[type="number"]:focus, select:focus {
+    input[type="number"]:focus, input[type="text"]:focus, input[type="email"]:focus,
+    input[type="tel"]:focus, select:focus {
       border-color: var(--blue);
       box-shadow: 0 0 0 3px rgba(3,169,244,0.15);
     }
@@ -229,7 +261,6 @@
       color: var(--muted); padding: 8px 0;
     }
 
-    /* Waterfall rows */
     .sim-row {
       display: flex;
       justify-content: space-between;
@@ -264,7 +295,6 @@
       margin: 4px 0;
     }
 
-    /* Bar */
     .sim-bar-wrap {
       margin-top: 8px;
       display: flex;
@@ -300,7 +330,6 @@
     .sim-converted .sim-lbl { font-size: 11px; }
     .sim-converted .sim-val { font-size: 12px; color: var(--blue-dark); }
 
-    /* badges */
     .badge {
       display: inline-block;
       padding: 1px 5px;
@@ -341,6 +370,43 @@
       display: flex; align-items: center; justify-content: center; gap: 5px;
     }
     #saved-msg.visible { opacity: 1; }
+
+    /* ── Invoice tab ──────────────────────────────────────── */
+    .generate-btn {
+      width: 100%;
+      padding: 12px;
+      background: #16a34a; color: #fff;
+      border: none; border-radius: 8px;
+      font-size: 13px; font-weight: 700;
+      cursor: pointer; font-family: inherit;
+      transition: background 0.15s, transform 0.1s;
+      letter-spacing: 0.02em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .generate-btn:hover  { background: #15803d; }
+    .generate-btn:active { transform: scale(0.99); }
+    .generate-btn.loading { opacity: 0.6; pointer-events: none; }
+
+    #inv-status {
+      text-align: center;
+      font-size: 11px; font-weight: 600;
+      min-height: 15px; opacity: 0;
+      transition: opacity 0.2s;
+    }
+    #inv-status.visible { opacity: 1; }
+    #inv-status.ok    { color: var(--green); }
+    #inv-status.error { color: var(--red); }
+
+    .inv-note {
+      font-size: 10px;
+      color: var(--muted);
+      text-align: center;
+      line-height: 1.5;
+      padding: 0 4px;
+    }
   </style>
 </head>
 <body>
@@ -380,6 +446,29 @@
       <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
       <polyline points="17 6 23 6 23 12"/>
     </symbol>
+    <symbol id="ico-file-text" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+      <polyline points="14 2 14 8 20 8"/>
+      <line x1="16" y1="13" x2="8" y2="13"/>
+      <line x1="16" y1="17" x2="8" y2="17"/>
+      <polyline points="10 9 9 9 8 9"/>
+    </symbol>
+    <symbol id="ico-user" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+      <circle cx="12" cy="7" r="4"/>
+    </symbol>
+    <symbol id="ico-briefcase" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
+      <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+    </symbol>
+    <symbol id="ico-credit-card" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
+      <line x1="1" y1="10" x2="23" y2="10"/>
+    </symbol>
+    <symbol id="ico-settings" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="3"/>
+      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+    </symbol>
   </svg>
 
   <header>
@@ -392,135 +481,284 @@
     </div>
   </header>
 
-  <form id="settings-form">
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="settings">
+      <svg class="icon" viewBox="0 0 24 24"><use href="#ico-settings"/></svg>
+      Réglages
+    </button>
+    <button class="tab-btn" data-tab="invoice">
+      <svg class="icon" viewBox="0 0 24 24"><use href="#ico-file-text"/></svg>
+      Facture
+    </button>
+  </div>
 
-    <!-- Hourly rate -->
-    <div class="card">
-      <div class="card-header">
-        <svg class="icon" viewBox="0 0 24 24"><use href="#ico-clock"/></svg>
-        Hourly Rate
-      </div>
-      <div class="card-body">
-        <div class="row-2">
-          <div class="field">
-            <label for="hourly-rate">Rate</label>
-            <div class="input-wrap">
-              <input type="number" id="hourly-rate" placeholder="80" min="0" step="0.01" class="has-unit" />
-              <span class="unit" id="rate-unit">€</span>
+  <!-- ══ SETTINGS PANEL ══════════════════════════════════ -->
+  <div id="panel-settings">
+    <form id="settings-form">
+
+      <!-- Hourly rate -->
+      <div class="card">
+        <div class="card-header">
+          <svg class="icon" viewBox="0 0 24 24"><use href="#ico-clock"/></svg>
+          Hourly Rate
+        </div>
+        <div class="card-body">
+          <div class="row-2">
+            <div class="field">
+              <label for="hourly-rate">Rate</label>
+              <div class="input-wrap">
+                <input type="number" id="hourly-rate" placeholder="80" min="0" step="0.01" class="has-unit" />
+                <span class="unit" id="rate-unit">€</span>
+              </div>
+            </div>
+            <div class="field narrow">
+              <label for="paid-currency">Currency</label>
+              <select id="paid-currency"></select>
             </div>
           </div>
-          <div class="field narrow">
-            <label for="paid-currency">Currency</label>
-            <select id="paid-currency"></select>
+        </div>
+      </div>
+
+      <!-- Deductions -->
+      <div class="card">
+        <div class="card-header">
+          <svg class="icon" viewBox="0 0 24 24"><use href="#ico-minus-circle"/></svg>
+          Deductions
+        </div>
+        <div class="card-body">
+          <div class="field">
+            <label for="social-charges">Social charges (%)</label>
+            <div class="input-wrap">
+              <input type="number" id="social-charges" placeholder="24.6" min="0" max="100" step="0.1" class="has-unit" />
+              <span class="unit">%</span>
+            </div>
+            <span class="hint">Deducted first on gross CA (BNC / SSI 2025: 24.6 %).</span>
+          </div>
+          <div class="field">
+            <label for="prof-expense">Professional expense deduction (%)</label>
+            <div class="input-wrap">
+              <input type="number" id="prof-expense" placeholder="0" min="0" max="100" step="0.1" class="has-unit" />
+              <span class="unit">%</span>
+            </div>
+            <span class="hint">Micro-BNC abattement: 34 % — not applicable with versement lib&eacute;ratoire.</span>
+          </div>
+          <div class="field">
+            <label for="tax-rate">Income tax (%)</label>
+            <div class="input-wrap">
+              <input type="number" id="tax-rate" placeholder="2.2" min="0" max="100" step="0.1" class="has-unit" />
+              <span class="unit">%</span>
+            </div>
+            <span class="hint">Versement lib&eacute;ratoire BNC: 2.2 %. TMI classique: 11&ndash;45 %.</span>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- Deductions -->
-    <div class="card">
+      <!-- Currency conversion -->
+      <div class="card">
+        <div class="card-header">
+          <svg class="icon" viewBox="0 0 24 24"><use href="#ico-refresh-cw"/></svg>
+          Currency Conversion
+        </div>
+        <div class="card-body">
+          <div class="row-2" style="align-items:flex-end">
+            <div class="field">
+              <label>Paid in</label>
+              <select id="paid-currency-display" disabled></select>
+            </div>
+            <span class="arrow-sep">
+              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            </span>
+            <div class="field">
+              <label for="receive-currency">Receive in</label>
+              <select id="receive-currency"></select>
+            </div>
+          </div>
+          <div class="rate-row">
+            <div class="field">
+              <label for="exchange-rate">Exchange rate</label>
+              <input type="number" id="exchange-rate" placeholder="1.000000" min="0" step="0.000001" />
+            </div>
+            <button type="button" id="fetch-rate-btn" class="fetch-btn">
+              <svg class="icon" viewBox="0 0 24 24"><use href="#ico-zap"/></svg>
+              Live rate
+            </button>
+          </div>
+          <div id="rate-status"></div>
+        </div>
+      </div>
+
+    </form>
+
+    <!-- Simulation -->
+    <div class="card" id="sim-card">
       <div class="card-header">
-        <svg class="icon" viewBox="0 0 24 24"><use href="#ico-minus-circle"/></svg>
-        Deductions
+        <svg class="icon" viewBox="0 0 24 24"><use href="#ico-bar-chart"/></svg>
+        Simulation
       </div>
-      <div class="card-body">
-        <div class="field">
-          <label for="social-charges">Social charges (%)</label>
-          <div class="input-wrap">
-            <input type="number" id="social-charges" placeholder="24.6" min="0" max="100" step="0.1" class="has-unit" />
-            <span class="unit">%</span>
+      <div class="card-body" style="padding-bottom:0">
+        <div class="sim-hours-row">
+          <div class="field">
+            <label for="sim-hours">Hours to simulate</label>
+            <div class="input-wrap">
+              <input type="number" id="sim-hours" placeholder="40" min="0" step="0.5" class="has-unit" value="40" />
+              <span class="unit">h</span>
+            </div>
           </div>
-          <span class="hint">Deducted first on gross CA (BNC / SSI 2025: 24.6 %).</span>
-        </div>
-        <div class="field">
-          <label for="prof-expense">Professional expense deduction (%)</label>
-          <div class="input-wrap">
-            <input type="number" id="prof-expense" placeholder="0" min="0" max="100" step="0.1" class="has-unit" />
-            <span class="unit">%</span>
+          <div class="sim-presets">
+            <button type="button" class="sim-preset" data-h="1">1h</button>
+            <button type="button" class="sim-preset" data-h="8">1d</button>
+            <button type="button" class="sim-preset active" data-h="40">1w</button>
+            <button type="button" class="sim-preset" data-h="160">1m</button>
           </div>
-          <span class="hint">Micro-BNC abattement: 34 % — not applicable with versement lib&eacute;ratoire.</span>
         </div>
-        <div class="field">
-          <label for="tax-rate">Income tax (%)</label>
-          <div class="input-wrap">
-            <input type="number" id="tax-rate" placeholder="2.2" min="0" max="100" step="0.1" class="has-unit" />
-            <span class="unit">%</span>
-          </div>
-          <span class="hint">Versement lib&eacute;ratoire BNC: 2.2 %. TMI classique: 11&ndash;45 %.</span>
-        </div>
+      </div>
+      <div id="sim-body">
+        <div id="sim-empty">Configure your hourly rate to see the simulation.</div>
       </div>
     </div>
 
-    <!-- Currency conversion -->
-    <div class="card">
-      <div class="card-header">
-        <svg class="icon" viewBox="0 0 24 24"><use href="#ico-refresh-cw"/></svg>
-        Currency Conversion
+    <div class="save-area">
+      <button type="submit" form="settings-form" class="save-btn">Save settings</button>
+      <div id="saved-msg">
+        <svg class="icon" viewBox="0 0 24 24" style="stroke:var(--green)"><use href="#ico-check"/></svg>
+        Saved — the dashboard will update automatically.
       </div>
-      <div class="card-body">
-        <div class="row-2" style="align-items:flex-end">
-          <div class="field">
-            <label>Paid in</label>
-            <select id="paid-currency-display" disabled></select>
-          </div>
-          <span class="arrow-sep">
-            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-          </span>
-          <div class="field">
-            <label for="receive-currency">Receive in</label>
-            <select id="receive-currency"></select>
-          </div>
-        </div>
-        <div class="rate-row">
-          <div class="field">
-            <label for="exchange-rate">Exchange rate</label>
-            <input type="number" id="exchange-rate" placeholder="1.0000" min="0" step="0.0001" />
-          </div>
-          <button type="button" id="fetch-rate-btn" class="fetch-btn">
-            <svg class="icon" viewBox="0 0 24 24"><use href="#ico-zap"/></svg>
-            Live rate
-          </button>
-        </div>
-        <div id="rate-status"></div>
-      </div>
-    </div>
-
-  </form>
-
-  <!-- Simulation -->
-  <div class="card" id="sim-card">
-    <div class="card-header">
-      <svg class="icon" viewBox="0 0 24 24"><use href="#ico-bar-chart"/></svg>
-      Simulation
-    </div>
-    <div class="card-body" style="padding-bottom:0">
-      <div class="sim-hours-row">
-        <div class="field">
-          <label for="sim-hours">Hours to simulate</label>
-          <div class="input-wrap">
-            <input type="number" id="sim-hours" placeholder="40" min="0" step="0.5" class="has-unit" value="40" />
-            <span class="unit">h</span>
-          </div>
-        </div>
-        <div class="sim-presets">
-          <button type="button" class="sim-preset" data-h="1">1h</button>
-          <button type="button" class="sim-preset" data-h="8">1d</button>
-          <button type="button" class="sim-preset active" data-h="40">1w</button>
-          <button type="button" class="sim-preset" data-h="160">1m</button>
-        </div>
-      </div>
-    </div>
-    <div id="sim-body">
-      <div id="sim-empty">Configure your hourly rate to see the simulation.</div>
     </div>
   </div>
 
-  <div class="save-area">
-    <button type="submit" form="settings-form" class="save-btn">Save settings</button>
-    <div id="saved-msg">
-      <svg class="icon" viewBox="0 0 24 24" style="stroke:var(--green)"><use href="#ico-check"/></svg>
-      Saved — the dashboard will update automatically.
+  <!-- ══ INVOICE PANEL ════════════════════════════════════ -->
+  <div id="panel-invoice" style="display:none">
+
+    <!-- Your Info -->
+    <div class="card">
+      <div class="card-header">
+        <svg class="icon" viewBox="0 0 24 24"><use href="#ico-user"/></svg>
+        Vos informations
+      </div>
+      <div class="card-body">
+        <div class="field">
+          <label for="inv-name">Nom complet</label>
+          <input type="text" id="inv-name" placeholder="Jean Dupont" />
+        </div>
+        <div class="field">
+          <label for="inv-address">Adresse</label>
+          <input type="text" id="inv-address" placeholder="12 Rue de la Paix" />
+        </div>
+        <div class="row-2">
+          <div class="field">
+            <label for="inv-city">Ville</label>
+            <input type="text" id="inv-city" placeholder="75001 Paris" />
+          </div>
+          <div class="field">
+            <label for="inv-country">Pays</label>
+            <input type="text" id="inv-country" placeholder="France" />
+          </div>
+        </div>
+        <div class="row-2">
+          <div class="field">
+            <label for="inv-phone">Téléphone</label>
+            <input type="tel" id="inv-phone" placeholder="06 00 00 00 00" />
+          </div>
+          <div class="field">
+            <label for="inv-email">Email</label>
+            <input type="email" id="inv-email" placeholder="vous@email.com" />
+          </div>
+        </div>
+        <div class="field">
+          <label for="inv-siret">SIRET</label>
+          <input type="text" id="inv-siret" placeholder="000 000 000 00000" />
+        </div>
+      </div>
     </div>
+
+    <!-- Client Info -->
+    <div class="card">
+      <div class="card-header">
+        <svg class="icon" viewBox="0 0 24 24"><use href="#ico-briefcase"/></svg>
+        Client
+      </div>
+      <div class="card-body">
+        <div class="field">
+          <label for="inv-client-name">Nom / Société</label>
+          <input type="text" id="inv-client-name" placeholder="Acme Corp" />
+        </div>
+        <div class="field">
+          <label for="inv-client-address">Adresse</label>
+          <input type="text" id="inv-client-address" placeholder="123 Main Street" />
+        </div>
+        <div class="row-2">
+          <div class="field">
+            <label for="inv-client-city">Ville</label>
+            <input type="text" id="inv-client-city" placeholder="10001 New York" />
+          </div>
+          <div class="field">
+            <label for="inv-client-country">Pays</label>
+            <input type="text" id="inv-client-country" placeholder="United States" />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bank Info -->
+    <div class="card">
+      <div class="card-header">
+        <svg class="icon" viewBox="0 0 24 24"><use href="#ico-credit-card"/></svg>
+        Coordonnées bancaires
+      </div>
+      <div class="card-body">
+        <div class="field">
+          <label for="inv-bank">Banque</label>
+          <input type="text" id="inv-bank" placeholder="Ma Banque" />
+        </div>
+        <div class="field">
+          <label for="inv-swift">SWIFT/BIC</label>
+          <input type="text" id="inv-swift" placeholder="XXXXXXXX" />
+        </div>
+        <div class="field">
+          <label for="inv-iban">IBAN</label>
+          <input type="text" id="inv-iban" placeholder="FR00 XXXX XXXX XXXX XXXX XXXX XXX" />
+        </div>
+      </div>
+    </div>
+
+    <!-- Invoice Config -->
+    <div class="card">
+      <div class="card-header">
+        <svg class="icon" viewBox="0 0 24 24"><use href="#ico-file-text"/></svg>
+        Configuration facture
+      </div>
+      <div class="card-body">
+        <div class="field">
+          <label for="inv-op-type">Type d'opération</label>
+          <input type="text" id="inv-op-type" placeholder="Prestation de services" />
+        </div>
+        <div class="field">
+          <label for="inv-payment-days">Délai de paiement (jours)</label>
+          <input type="number" id="inv-payment-days" placeholder="30" min="0" step="1" />
+        </div>
+        <div class="field">
+          <label for="inv-legal-note">Mention légale TVA</label>
+          <input type="text" id="inv-legal-note" placeholder="TVA non applicable - art. 259-1 du CGI" />
+        </div>
+        <div class="field">
+          <label for="inv-legal-status">Statut juridique</label>
+          <input type="text" id="inv-legal-status" placeholder="Entrepreneur individuel" />
+        </div>
+        <div class="hint">Le taux horaire et la devise sont repris depuis l'onglet Réglages.</div>
+      </div>
+    </div>
+
+    <!-- Generate -->
+    <div class="save-area">
+      <button type="button" class="generate-btn" id="generate-btn">
+        <svg class="icon" viewBox="0 0 24 24" style="stroke:#fff"><use href="#ico-file-text"/></svg>
+        Générer la facture PDF
+      </button>
+      <div id="inv-status"></div>
+      <p class="inv-note">Les heures sont lues depuis la vue Clockify active.<br>Tous les champs sont éditables dans la facture générée.</p>
+    </div>
+
   </div>
 
   <script src="popup.js"></script>
