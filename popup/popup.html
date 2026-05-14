@@ -407,6 +407,35 @@
       line-height: 1.5;
       padding: 0 4px;
     }
+
+    /* ── PDF import ───────────────────────────────────────── */
+    .import-btn {
+      width: 100%;
+      padding: 9px;
+      background: #fff;
+      color: var(--blue-dark);
+      border: 1.5px dashed var(--blue);
+      border-radius: 8px;
+      font-size: 12px; font-weight: 700;
+      cursor: pointer; font-family: inherit;
+      transition: background 0.15s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+    .import-btn:hover  { background: var(--blue-light); }
+    .import-btn.loading { opacity: 0.55; pointer-events: none; }
+
+    #import-status {
+      font-size: 10px;
+      min-height: 13px;
+      text-align: center;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+    #import-status.ok    { color: var(--green); }
+    #import-status.error { color: var(--red); }
   </style>
 </head>
 <body>
@@ -464,6 +493,11 @@
     <symbol id="ico-credit-card" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
       <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
       <line x1="1" y1="10" x2="23" y2="10"/>
+    </symbol>
+    <symbol id="ico-upload" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+      <polyline points="17 8 12 3 7 8"/>
+      <line x1="12" y1="3" x2="12" y2="15"/>
     </symbol>
     <symbol id="ico-settings" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
       <circle cx="12" cy="12" r="3"/>
@@ -630,6 +664,16 @@
   <!-- ══ INVOICE PANEL ════════════════════════════════════ -->
   <div id="panel-invoice" style="display:none">
 
+    <!-- Import from PDF -->
+    <div class="save-area" style="padding-bottom:0">
+      <button type="button" class="import-btn" id="import-pdf-btn">
+        <svg class="icon" viewBox="0 0 24 24"><use href="#ico-upload"/></svg>
+        Importer depuis un PDF
+      </button>
+      <input type="file" id="import-pdf-input" accept="application/pdf,.pdf" style="display:none" />
+      <div id="import-status"></div>
+    </div>
+
     <!-- Your Info -->
     <div class="card">
       <div class="card-header">
@@ -761,6 +805,8 @@
 
   </div>
 
+  <script src="vendor/pdf.min.js"></script>
   <script src="popup.js"></script>
+  <script src="pdf-import.js"></script>
 </body>
 </html>
