@@ -56,16 +56,19 @@ let bceRate = 1;
 
 function updateTotals() {
   let total = 0;
+  let totalHours = 0;
 
   document.querySelectorAll('.item-row').forEach(row => {
     const qty   = parseFr(row.querySelector('.item-qty').textContent);
     const price = parseFr(row.querySelector('.item-price').textContent);
     const amt   = qty * price;
     row.querySelector('.item-amount').textContent = fmtCurrency(amt, invoiceCurrency);
+    totalHours += qty;
     total += amt;
   });
 
   const totalStr = fmtCurrency(total, invoiceCurrency);
+  document.getElementById('total-hours').textContent = `${fmtFr(totalHours)} h`;
   document.getElementById('total-ht').textContent  = totalStr;
   document.getElementById('total-ttc').textContent = totalStr;
 
