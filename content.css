@@ -5,8 +5,11 @@
 #csc-earnings-card {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   font-size: 13px;
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
+  /* Inherit Clockify's design-system tokens so the card matches whatever theme
+     is active (light or dark); the hex values are fallbacks for outside Clockify. */
+  background: var(--ui-elevation-system-types-default-background, #ffffff);
+  color: var(--ui-global-text-color, #1e293b);
+  border: 1px solid var(--ui-elevation-system-types-default-border-color, #e2e8f0);
   border-radius: 10px;
   padding: 14px 16px 10px;
   min-width: 190px;
@@ -35,7 +38,7 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.07em;
-  color: #64748b;
+  color: var(--ui-input-placeholder, #64748b);
   margin-bottom: 8px;
 }
 
@@ -73,7 +76,7 @@
   font-size: 11px;
   font-weight: 700;
   color: #16a34a;
-  background: #dcfce7;
+  background: rgba(76, 175, 80, 0.15);
   border-radius: 6px;
   padding: 3px 7px;
   white-space: nowrap;
@@ -84,7 +87,7 @@
 /* ── Progress bar ──────────────────────────────────────────────────────────── */
 #csc-earnings-card .csc-bar-track {
   height: 5px;
-  background: #fee2e2;
+  background: rgba(244, 67, 54, 0.18);
   border-radius: 99px;
   overflow: hidden;
   margin-bottom: 8px;
@@ -102,7 +105,7 @@
   justify-content: space-between;
   gap: 8px;
   padding: 7px 0 5px;
-  border-top: 1px solid #f1f5f9;
+  border-top: 1px solid var(--ui-elevation-system-types-default-border-color, #f1f5f9);
 }
 
 #csc-earnings-card .csc-convert-item {
@@ -134,8 +137,8 @@
 /* ── Footer ────────────────────────────────────────────────────────────────── */
 #csc-earnings-card .csc-footer {
   font-size: 10px;
-  color: #cbd5e1;
-  border-top: 1px solid #f8fafc;
+  color: var(--ui-input-placeholder, #cbd5e1);
+  border-top: 1px solid var(--ui-elevation-system-types-default-border-color, #f8fafc);
   padding-top: 6px;
   margin-top: 4px;
 }
