@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <title>Clockify Salary Calculator</title>
@@ -22,6 +22,51 @@
       --text:        #1e293b;
       --muted:       #64748b;
       --label:       #475569;
+      --accent:      #0288d1;   /* readable blue used for accent text */
+      --input-bg:        #ffffff;
+      --card-header-bg:  #f8fafc;
+      --hairline:        #f1f5f9;
+      --badge-bg:        #f1f5f9;
+      color-scheme:      light;
+    }
+
+    /* ── Dark theme — mapped onto the Clockify dark palette ───────────────────
+       Driven entirely by remapping the variables above, so every hover/active
+       state keeps working. Toggled via the .csc-dark class on <html> (theme.js).
+       ───────────────────────────────────────────────────────────────────────── */
+    html.csc-dark {
+      --blue:            #03a9f4;
+      --blue-dark:       #0288d1;  /* kept for saturated button backgrounds */
+      --blue-light:      #013e5b;  /* tinted hover / active surface */
+      --green:           #4ade80;
+      --green-light:     #2c4020;
+      --red:             #f87171;
+      --red-light:       #4a1c1c;
+      --amber:           #fbbf24;
+      --amber-light:     #473408;
+      --bg:              #12191d;
+      --card:            #1d272b;
+      --border:          #3e515b;
+      --text:            #f2f6f8;
+      --muted:           #a2b8c3;
+      --label:           #c6d2d9;
+      --accent:          #3abffd;  /* brighter so accent text reads on dark */
+      --input-bg:        #253238;
+      --card-header-bg:  #161e22;
+      --hairline:        #2d3c43;
+      --badge-bg:        #37474f;
+      color-scheme:      dark;
+    }
+    html.csc-dark header {
+      background: linear-gradient(135deg, #026897 0%, #014a6b 100%);
+    }
+    /* Lighten the native select arrow so it reads on the dark input background. */
+    html.csc-dark select {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23a2b8c3' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3C/svg%3E");
+    }
+    /* Smooth the switch between themes. */
+    body, header, .card, .tabs, .card-header, .badge {
+      transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
     }
 
     body {
@@ -67,6 +112,24 @@
     header h1 { font-size: 14px; font-weight: 700; }
     header p  { font-size: 11px; opacity: 0.8; margin-top: 1px; }
 
+    /* ── Theme select (right edge of the tab bar) ─────────── */
+    .theme-select {
+      margin-left: auto;
+      align-self: center;
+      width: auto;
+      flex-shrink: 0;
+      padding: 4px 26px 4px 9px;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--muted);
+      background-color: var(--input-bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .theme-select:hover { border-color: var(--blue); color: var(--text); }
+    .theme-select:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(3,169,244,0.15); }
+
     /* ── Tabs ─────────────────────────────────────────────── */
     .tabs {
       display: flex;
@@ -91,7 +154,7 @@
       gap: 5px;
     }
     .tab-btn.active {
-      color: var(--blue-dark);
+      color: var(--accent);
       border-bottom-color: var(--blue);
     }
     .tab-btn:hover:not(.active) { color: var(--text); }
@@ -108,13 +171,13 @@
 
     .card-header {
       padding: 7px 14px;
-      background: #f8fafc;
+      background: var(--card-header-bg);
       border-bottom: 1px solid var(--border);
       font-size: 10px;
       font-weight: 700;
       letter-spacing: 0.07em;
       text-transform: uppercase;
-      color: var(--blue-dark);
+      color: var(--accent);
       display: flex;
       align-items: center;
       gap: 6px;
@@ -161,7 +224,7 @@
       font-size: 13px;
       font-family: inherit;
       color: var(--text);
-      background: #fff;
+      background: var(--input-bg);
       transition: border-color 0.15s, box-shadow 0.15s;
       outline: none;
       -webkit-appearance: none;
@@ -205,7 +268,7 @@
       border-radius: 6px;
       font-size: 11px; font-weight: 700;
       color: var(--blue);
-      background: #fff;
+      background: var(--input-bg);
       cursor: pointer;
       white-space: nowrap;
       flex-shrink: 0;
@@ -245,14 +308,14 @@
       border-radius: 6px;
       font-size: 11px; font-weight: 600;
       color: var(--muted);
-      background: #fff;
+      background: var(--input-bg);
       cursor: pointer;
       transition: border-color 0.12s, color 0.12s, background 0.12s;
       font-family: inherit;
       white-space: nowrap;
     }
     .sim-preset:hover  { border-color: var(--blue); color: var(--blue); }
-    .sim-preset.active { border-color: var(--blue); background: var(--blue-light); color: var(--blue-dark); }
+    .sim-preset.active { border-color: var(--blue); background: var(--blue-light); color: var(--accent); }
 
     #sim-body { padding: 10px 14px 12px; }
 
@@ -285,7 +348,7 @@
     .sim-val.green  { color: var(--green); font-size: 15px; }
 
     .sim-deductions {
-      border-left: 2px solid #f1f5f9;
+      border-left: 2px solid var(--hairline);
       margin-left: 6px;
       padding-left: 10px;
     }
@@ -322,26 +385,26 @@
     .sim-converted {
       margin-top: 8px;
       padding-top: 8px;
-      border-top: 1px solid #f1f5f9;
+      border-top: 1px solid var(--hairline);
       display: flex;
       justify-content: space-between;
       align-items: baseline;
     }
     .sim-converted .sim-lbl { font-size: 11px; }
-    .sim-converted .sim-val { font-size: 12px; color: var(--blue-dark); }
+    .sim-converted .sim-val { font-size: 12px; color: var(--accent); }
 
     .badge {
       display: inline-block;
       padding: 1px 5px;
       border-radius: 20px;
       font-size: 9px; font-weight: 700;
-      background: #f1f5f9; color: var(--muted);
+      background: var(--badge-bg); color: var(--muted);
       vertical-align: middle;
     }
     .badge.red   { background: var(--red-light); color: var(--red); }
     .badge.amber { background: var(--amber-light); color: var(--amber); }
     .badge.green { background: var(--green-light); color: var(--green); }
-    .badge.blue  { background: var(--blue-light); color: var(--blue-dark); }
+    .badge.blue  { background: var(--blue-light); color: var(--accent); }
 
     /* ── Save ─────────────────────────────────────────────── */
     .save-area {
@@ -412,8 +475,8 @@
     .import-btn {
       width: 100%;
       padding: 9px;
-      background: #fff;
-      color: var(--blue-dark);
+      background: var(--input-bg);
+      color: var(--accent);
       border: 1.5px dashed var(--blue);
       border-radius: 8px;
       font-size: 12px; font-weight: 700;
@@ -437,6 +500,8 @@
     #import-status.ok    { color: var(--green); }
     #import-status.error { color: var(--red); }
   </style>
+  <!-- Applies the saved theme before the body paints (no flash). -->
+  <script src="theme.js"></script>
 </head>
 <body>
 
@@ -519,12 +584,17 @@
   <div class="tabs">
     <button class="tab-btn active" data-tab="settings">
       <svg class="icon" viewBox="0 0 24 24"><use href="#ico-settings"/></svg>
-      Réglages
+      Settings
     </button>
     <button class="tab-btn" data-tab="invoice">
       <svg class="icon" viewBox="0 0 24 24"><use href="#ico-file-text"/></svg>
-      Facture
+      Invoice
     </button>
+    <select id="theme-select" class="theme-select" aria-label="Theme">
+      <option value="system">Preference</option>
+      <option value="dark">Dark</option>
+      <option value="light">White</option>
+    </select>
   </div>
 
   <!-- ══ SETTINGS PANEL ══════════════════════════════════ -->
@@ -567,7 +637,7 @@
               <input type="number" id="social-charges" placeholder="24.6" min="0" max="100" step="0.1" class="has-unit" />
               <span class="unit">%</span>
             </div>
-            <span class="hint">Deducted first on gross CA (BNC / SSI 2025: 24.6 %).</span>
+            <span class="hint">Deducted first from gross revenue (BNC / SSI 2025: 24.6%).</span>
           </div>
           <div class="field">
             <label for="prof-expense">Professional expense deduction (%)</label>
@@ -575,7 +645,7 @@
               <input type="number" id="prof-expense" placeholder="0" min="0" max="100" step="0.1" class="has-unit" />
               <span class="unit">%</span>
             </div>
-            <span class="hint">Micro-BNC abattement: 34 % — not applicable with versement lib&eacute;ratoire.</span>
+            <span class="hint">Micro-BNC allowance: 34% — not applicable with the flat-rate tax option.</span>
           </div>
           <div class="field">
             <label for="tax-rate">Income tax (%)</label>
@@ -583,7 +653,7 @@
               <input type="number" id="tax-rate" placeholder="2.2" min="0" max="100" step="0.1" class="has-unit" />
               <span class="unit">%</span>
             </div>
-            <span class="hint">Versement lib&eacute;ratoire BNC: 2.2 %. TMI classique: 11&ndash;45 %.</span>
+            <span class="hint">Flat-rate tax (BNC): 2.2%. Standard bracket (TMI): 11&ndash;45%.</span>
           </div>
         </div>
       </div>
@@ -668,7 +738,7 @@
     <div class="save-area" style="padding-bottom:0">
       <button type="button" class="import-btn" id="import-pdf-btn">
         <svg class="icon" viewBox="0 0 24 24"><use href="#ico-upload"/></svg>
-        Importer depuis un PDF
+        Import from PDF
       </button>
       <input type="file" id="import-pdf-input" accept="application/pdf,.pdf" style="display:none" />
       <div id="import-status"></div>
@@ -678,35 +748,35 @@
     <div class="card">
       <div class="card-header">
         <svg class="icon" viewBox="0 0 24 24"><use href="#ico-user"/></svg>
-        Vos informations
+        Your information
       </div>
       <div class="card-body">
         <div class="field">
-          <label for="inv-name">Nom complet</label>
-          <input type="text" id="inv-name" placeholder="Jean Dupont" />
+          <label for="inv-name">Full name</label>
+          <input type="text" id="inv-name" placeholder="John Doe" />
         </div>
         <div class="field">
-          <label for="inv-address">Adresse</label>
-          <input type="text" id="inv-address" placeholder="12 Rue de la Paix" />
+          <label for="inv-address">Address</label>
+          <input type="text" id="inv-address" placeholder="123 Main Street" />
         </div>
         <div class="row-2">
           <div class="field">
-            <label for="inv-city">Ville</label>
+            <label for="inv-city">City</label>
             <input type="text" id="inv-city" placeholder="75001 Paris" />
           </div>
           <div class="field">
-            <label for="inv-country">Pays</label>
+            <label for="inv-country">Country</label>
             <input type="text" id="inv-country" placeholder="France" />
           </div>
         </div>
         <div class="row-2">
           <div class="field">
-            <label for="inv-phone">Téléphone</label>
+            <label for="inv-phone">Phone</label>
             <input type="tel" id="inv-phone" placeholder="06 00 00 00 00" />
           </div>
           <div class="field">
             <label for="inv-email">Email</label>
-            <input type="email" id="inv-email" placeholder="vous@email.com" />
+            <input type="email" id="inv-email" placeholder="you@email.com" />
           </div>
         </div>
         <div class="field">
@@ -724,20 +794,20 @@
       </div>
       <div class="card-body">
         <div class="field">
-          <label for="inv-client-name">Nom / Société</label>
+          <label for="inv-client-name">Name / Company</label>
           <input type="text" id="inv-client-name" placeholder="Acme Corp" />
         </div>
         <div class="field">
-          <label for="inv-client-address">Adresse</label>
+          <label for="inv-client-address">Address</label>
           <input type="text" id="inv-client-address" placeholder="123 Main Street" />
         </div>
         <div class="row-2">
           <div class="field">
-            <label for="inv-client-city">Ville</label>
+            <label for="inv-client-city">City</label>
             <input type="text" id="inv-client-city" placeholder="10001 New York" />
           </div>
           <div class="field">
-            <label for="inv-client-country">Pays</label>
+            <label for="inv-client-country">Country</label>
             <input type="text" id="inv-client-country" placeholder="United States" />
           </div>
         </div>
@@ -748,12 +818,12 @@
     <div class="card">
       <div class="card-header">
         <svg class="icon" viewBox="0 0 24 24"><use href="#ico-credit-card"/></svg>
-        Coordonnées bancaires
+        Bank details
       </div>
       <div class="card-body">
         <div class="field">
-          <label for="inv-bank">Banque</label>
-          <input type="text" id="inv-bank" placeholder="Ma Banque" />
+          <label for="inv-bank">Bank</label>
+          <input type="text" id="inv-bank" placeholder="My Bank" />
         </div>
         <div class="field">
           <label for="inv-swift">SWIFT/BIC</label>
@@ -770,26 +840,26 @@
     <div class="card">
       <div class="card-header">
         <svg class="icon" viewBox="0 0 24 24"><use href="#ico-file-text"/></svg>
-        Configuration facture
+        Invoice settings
       </div>
       <div class="card-body">
         <div class="field">
-          <label for="inv-op-type">Type d'opération</label>
-          <input type="text" id="inv-op-type" placeholder="Prestation de services" />
+          <label for="inv-op-type">Operation type</label>
+          <input type="text" id="inv-op-type" placeholder="Provision of services" />
         </div>
         <div class="field">
-          <label for="inv-payment-days">Délai de paiement (jours)</label>
+          <label for="inv-payment-days">Payment term (days)</label>
           <input type="number" id="inv-payment-days" placeholder="30" min="0" step="1" />
         </div>
         <div class="field">
-          <label for="inv-legal-note">Mention légale TVA</label>
-          <input type="text" id="inv-legal-note" placeholder="TVA non applicable - art. 259-1 du CGI" />
+          <label for="inv-legal-note">VAT legal notice</label>
+          <input type="text" id="inv-legal-note" placeholder="VAT not applicable - art. 259-1 of the French Tax Code" />
         </div>
         <div class="field">
-          <label for="inv-legal-status">Statut juridique</label>
-          <input type="text" id="inv-legal-status" placeholder="Entrepreneur individuel" />
+          <label for="inv-legal-status">Legal status</label>
+          <input type="text" id="inv-legal-status" placeholder="Sole proprietor" />
         </div>
-        <div class="hint">Le taux horaire et la devise sont repris depuis l'onglet Réglages.</div>
+        <div class="hint">The hourly rate and currency are taken from the Settings tab.</div>
       </div>
     </div>
 
@@ -797,10 +867,10 @@
     <div class="save-area">
       <button type="button" class="generate-btn" id="generate-btn">
         <svg class="icon" viewBox="0 0 24 24" style="stroke:#fff"><use href="#ico-file-text"/></svg>
-        Générer la facture PDF
+        Generate PDF invoice
       </button>
       <div id="inv-status"></div>
-      <p class="inv-note">Les heures sont lues depuis la vue Clockify active.<br>Tous les champs sont éditables dans la facture générée.</p>
+      <p class="inv-note">Hours are read from the active Clockify view.<br>All fields are editable in the generated invoice.</p>
     </div>
 
   </div>

@@ -171,11 +171,11 @@ function renderSimulation() {
     html += `
       <div class="sim-converted">
         <span class="sim-lbl">Net in ${receive}</span>
-        <span class="sim-val" style="color:var(--blue-dark)">${fmt(c.net * c.exchangeRate, receive)}</span>
+        <span class="sim-val" style="color:var(--accent)">${fmt(c.net * c.exchangeRate, receive)}</span>
       </div>
       <div class="sim-converted" style="border-top:none;padding-top:2px">
         <span class="sim-lbl">Gross in ${receive}</span>
-        <span class="sim-val" style="color:var(--blue-dark);font-size:11px">${fmt(c.gross * c.exchangeRate, receive)}</span>
+        <span class="sim-val" style="color:var(--accent);font-size:11px">${fmt(c.gross * c.exchangeRate, receive)}</span>
       </div>`;
   }
 
@@ -401,9 +401,9 @@ generateBtn.addEventListener('click', async () => {
     // Open invoice page
     chrome.tabs.create({ url: chrome.runtime.getURL('invoice/invoice.html') });
 
-    showInvStatus(`Facture #${nextNumber} générée — onglet ouvert.`);
+    showInvStatus(`Invoice #${nextNumber} generated — tab opened.`);
   } catch (err) {
-    showInvStatus(`Erreur : ${err.message}`, 'error');
+    showInvStatus(`Error: ${err.message}`, 'error');
   } finally {
     generateBtn.classList.remove('loading');
   }
