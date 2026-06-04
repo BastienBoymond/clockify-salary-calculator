@@ -97,11 +97,11 @@ const RE_EMAIL = /[\w.+-]+@[\w-]+\.[\w.-]+/;
 const RE_PHONE = /^[+\d][\d\s.()\-]{7,}$/;
 
 const HEADER_META_PATTERNS = [
-  /^FACTURE\b/i,
-  /Date de facturation/i,
-  /[ÉE]ch[ée]ance/i,
-  /P[ée]riode/i,
-  /Type d[' ]?op[ée]ration/i,
+  /^(FACTURE|INVOICE)\b/i,
+  /(Date de facturation|Invoice date)/i,
+  /([ÉE]ch[ée]ance|Due date)/i,
+  /(P[ée]riode|Period)/i,
+  /(Type d[' ]?op[ée]ration|Operation type)/i,
 ];
 
 // ── Parser ────────────────────────────────────────────────────────────────────
@@ -113,7 +113,7 @@ function parse(rows) {
 
   // Find table header row & SIRET row using full-row text.
   const tableIdx = fullTexts.findIndex(t =>
-    /Description/i.test(t) && /(Qt[ée]|Quantit)/i.test(t)
+    /Description/i.test(t) && /(Qt[ée]|Quantit|Qty)/i.test(t)
   );
   const siretIdx = fullTexts.findIndex(t => /SIRET/i.test(t));
 
@@ -128,7 +128,7 @@ function parse(rows) {
     for (const re of HEADER_META_PATTERNS) {
       if (re.test(full)) {
         isMeta = true;
-        const m = full.match(/Type d[' ]?op[ée]ration\s*:?\s*(.+)/i);
+        const m = full.match(/(?:Type d[' ]?op[ée]ration|Operation type)\s*:?\s*(.+)/i);
         if (m && m[1]) out.inv_opType = m[1].trim();
         break;
       }
@@ -171,12 +171,12 @@ function parse(rows) {
   //    rows aren't split across the column midline.
   for (const t of fullTexts) {
     let m;
-    if (!out.inv_bank        && (m = t.match(/Banque\s*:\s*(.+?)(?:\s+SWIFT|\s+IBAN|$)/i)))   out.inv_bank        = m[1].trim();
+    if (!out.inv_bank        && (m = t.match(/(?:Banque|Bank)\s*:\s*(.+?)(?:\s+SWIFT|\s+IBAN|$)/i))) out.inv_bank      = m[1].trim();
     if (!out.inv_swift       && (m = t.match(/SWIFT(?:\/BIC)?\s*:\s*([^\s].*?)(?:\s+IBAN|$)/i))) out.inv_swift   = m[1].trim();
     if (!out.inv_iban        && (m = t.match(/IBAN\s*:\s*(.+)/i)))                            out.inv_iban        = m[1].trim();
-    if (!out.inv_paymentDays && (m = t.match(/(\d+)\s*jours?/i)))                             out.inv_paymentDays = m[1];
+    if (!out.inv_paymentDays && (m = t.match(/(\d+)\s*(?:jours?|days?)/i)))                    out.inv_paymentDays = m[1];
     if (!out.inv_siret       && (m = t.match(/SIRET[^:]*:\s*([\d\s]+?)(?:\s*$|[^\d\s])/i)))   out.inv_siret       = m[1].trim();
-    if (!out.inv_legalNote   && /TVA\s+non\s+applicable/i.test(t))                            out.inv_legalNote   = t;
+    if (!out.inv_legalNote   && /(?:TVA\s+non\s+applicable|VAT\s+not\s+applicable)/i.test(t))  out.inv_legalNote   = t;
   }
 
   // 5. Legal status: footer row containing " — " just above the SIRET row.
@@ -217,7 +217,7 @@ async function applyData(data) {
 // ── Entry ─────────────────────────────────────────────────────────────────────
 
 async function importPdf(file) {
-  showStatus('Lecture du PDF…');
+  showStatus('Reading PDF…');
   const buf    = await file.arrayBuffer();
   const pdfDoc = await pdfjsLib.getDocument({ data: buf, isEvalSupported: false }).promise;
   const items  = await extractItems(pdfDoc);
@@ -225,8 +225,8 @@ async function importPdf(file) {
   const data   = parse(rows);
   const n      = await applyData(data);
   showStatus(
-    n > 0 ? `${n} champ${n > 1 ? 's' : ''} importé${n > 1 ? 's' : ''} et sauvegardé${n > 1 ? 's' : ''}.`
-          : 'Aucun champ détecté.',
+    n > 0 ? `${n} field${n > 1 ? 's' : ''} imported and saved.`
+          : 'No fields detected.',
     n > 0 ? 'ok' : 'error',
   );
 }
@@ -241,7 +241,7 @@ importInput.addEventListener('change', async () => {
     await importPdf(file);
   } catch (err) {
     console.error(err);
-    showStatus(`Erreur : ${err.message}`, 'error');
+    showStatus(`Error: ${err.message}`, 'error');
   } finally {
     importBtn.classList.remove('loading');
     importInput.value = '';

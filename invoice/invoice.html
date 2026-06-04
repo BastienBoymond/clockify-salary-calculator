@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Facture</title>
+  <title>Invoice</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -370,10 +370,10 @@
 
   <!-- Toolbar -->
   <div class="toolbar no-print">
-    <span class="toolbar-title">Facture — <span id="toolbar-title-num"></span></span>
-    <span class="toolbar-hint">Cliquez sur n'importe quel champ pour l'éditer</span>
-    <button class="btn btn-secondary no-print" id="add-line-btn">+ Ligne</button>
-    <button class="btn btn-primary no-print" id="print-btn">⬇ Télécharger PDF</button>
+    <span class="toolbar-title">Invoice — <span id="toolbar-title-num"></span></span>
+    <span class="toolbar-hint">Click any field to edit it</span>
+    <button class="btn btn-secondary no-print" id="add-line-btn">+ Line</button>
+    <button class="btn btn-primary no-print" id="print-btn">⬇ Download PDF</button>
   </div>
 
   <div class="page-wrap">
@@ -382,11 +382,11 @@
       <!-- Header -->
       <div class="inv-header">
         <div class="inv-meta">
-          <div class="inv-title">FACTURE - <span id="inv-number" contenteditable>-</span></div>
-          <div class="inv-meta-row">Date de facturation&nbsp;: <span id="inv-date" contenteditable>-</span></div>
-          <div class="inv-meta-row">Échéance&nbsp;: <span id="inv-due" contenteditable>-</span></div>
-          <div class="inv-meta-row">Période&nbsp;: <span id="inv-period" contenteditable>-</span></div>
-          <div class="inv-meta-row">Type d'opération&nbsp;: <span id="inv-op-type" contenteditable>Prestation de services</span></div>
+          <div class="inv-title">INVOICE - <span id="inv-number" contenteditable>-</span></div>
+          <div class="inv-meta-row">Invoice date&nbsp;: <span id="inv-date" contenteditable>-</span></div>
+          <div class="inv-meta-row">Due date&nbsp;: <span id="inv-due" contenteditable>-</span></div>
+          <div class="inv-meta-row">Period&nbsp;: <span id="inv-period" contenteditable>-</span></div>
+          <div class="inv-meta-row">Operation type&nbsp;: <span id="inv-op-type" contenteditable>Provision of services</span></div>
         </div>
       </div>
 
@@ -394,7 +394,7 @@
       <div class="inv-parties">
         <!-- Freelancer -->
         <div class="inv-party">
-          <div class="inv-party-name"><span id="inv-name" contenteditable>Votre nom</span></div>
+          <div class="inv-party-name"><span id="inv-name" contenteditable>Your name</span></div>
           <div class="inv-party-details">
             <span id="inv-name-full" contenteditable></span><br>
             <span id="inv-addr" contenteditable></span><br>
@@ -418,9 +418,9 @@
 
       <!-- BCE (shown only when currencies differ) -->
       <div class="inv-bce" id="bce-section" style="display:none">
-        Taux BCE <span id="inv-bce-pair" contenteditable>EUR-USD</span> utilisé&nbsp;:
+        ECB rate <span id="inv-bce-pair" contenteditable>EUR-USD</span> used&nbsp;:
         <span id="inv-bce-rate" contenteditable>1,0000</span><br>
-        Total en Euros&nbsp;: ~<span id="inv-total-eur">0,00</span>€
+        Total in Euros&nbsp;: ~<span id="inv-total-eur">0,00</span>€
       </div>
 
       <!-- Line items -->
@@ -430,10 +430,10 @@
             <tr>
               <th>Description</th>
               <th class="th-date">Date</th>
-              <th class="th-qty">Qté</th>
-              <th class="th-unit">Unité</th>
-              <th class="th-price">Prix unitaire</th>
-              <th class="th-amount">Montant</th>
+              <th class="th-qty">Qty</th>
+              <th class="th-unit">Unit</th>
+              <th class="th-price">Unit price</th>
+              <th class="th-amount">Amount</th>
               <th class="th-actions no-print"></th>
             </tr>
           </thead>
@@ -444,15 +444,15 @@
       <!-- Totals -->
       <div class="inv-totals">
         <div class="inv-total-row">
-          <span class="inv-total-label">Total heures</span>
+          <span class="inv-total-label">Total hours</span>
           <span class="inv-total-val" id="total-hours">0,00 h</span>
         </div>
         <div class="inv-total-row">
-          <span class="inv-total-label">Total HT</span>
+          <span class="inv-total-label">Total excl. tax</span>
           <span class="inv-total-val" id="total-ht">0,00</span>
         </div>
         <div class="inv-total-row inv-total-ttc-row">
-          <span class="inv-total-label inv-total-ttc-label">Total TTC</span>
+          <span class="inv-total-label inv-total-ttc-label">Total incl. tax</span>
           <span class="inv-total-val inv-total-ttc-val" id="total-ttc">0,00</span>
         </div>
       </div>
@@ -460,9 +460,9 @@
       <!-- Payment info -->
       <div class="inv-payment">
         <div class="inv-payment-grid">
-          <span class="inv-payment-key">Moyens de paiement&nbsp;:</span>
+          <span class="inv-payment-key">Payment methods&nbsp;:</span>
           <span class="inv-payment-val">
-            Banque&nbsp;: <span id="inv-bank" contenteditable>-</span>
+            Bank&nbsp;: <span id="inv-bank" contenteditable>-</span>
           </span>
           <span></span>
           <span class="inv-payment-val">
@@ -472,16 +472,16 @@
           <span class="inv-payment-val">
             IBAN&nbsp;: <span id="inv-iban" contenteditable>-</span>
           </span>
-          <span class="inv-payment-key">Conditions de paiement&nbsp;:</span>
+          <span class="inv-payment-key">Payment terms&nbsp;:</span>
           <span class="inv-payment-val">
-            <span id="inv-pay-days" contenteditable>30</span> jours
+            <span id="inv-pay-days" contenteditable>30</span> days
           </span>
         </div>
       </div>
 
       <!-- Legal note -->
       <div class="inv-legal">
-        <span id="inv-legal-note" contenteditable>TVA non applicable - art. 259-1 du CGI</span>
+        <span id="inv-legal-note" contenteditable>VAT not applicable - art. 259-1 of the French Tax Code</span>
       </div>
 
       <!-- Footer -->
@@ -489,10 +489,10 @@
         <strong>
           <span id="inv-footer-name" contenteditable></span>
           &mdash;
-          <span id="inv-footer-status" contenteditable>Entrepreneur individuel</span>
+          <span id="inv-footer-status" contenteditable>Sole proprietor</span>
         </strong><br>
         <span id="inv-footer-addr" contenteditable></span><br>
-        Numéro de SIRET&nbsp;: <span id="inv-siret" contenteditable></span>
+        SIRET number&nbsp;: <span id="inv-siret" contenteditable></span>
       </div>
 
     </div>

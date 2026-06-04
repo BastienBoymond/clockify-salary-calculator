@@ -96,7 +96,7 @@ function addRow({ name = '', date = '', hours = 0, price = 0 } = {}) {
     <td class="item-unit td-unit" contenteditable>h</td>
     <td class="item-price td-price" contenteditable>${fmtFr(price)}</td>
     <td class="item-amount td-amount">${fmtCurrency(hours * price, invoiceCurrency)}</td>
-    <td class="td-actions no-print"><button class="remove-btn" title="Supprimer">×</button></td>
+    <td class="td-actions no-print"><button class="remove-btn" title="Remove">×</button></td>
   `;
 
   tr.querySelector('.remove-btn').addEventListener('click', () => {
@@ -134,21 +134,21 @@ async function loadAndRender() {
     if (el && val != null) el.textContent = String(val);
   }
 
-  const MONTHS_FR = ['Janvier','Février','Mars','Avril','Mai','Juin',
-                     'Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+  const MONTHS = ['January','February','March','April','May','June',
+                  'July','August','September','October','November','December'];
   const d = new Date(today + 'T00:00:00');
-  const period = `${MONTHS_FR[d.getMonth()]} ${d.getFullYear()}`;
+  const period = `${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
 
   // Toolbar
   document.getElementById('toolbar-title-num').textContent = `${year}-${num} — ${period}`;
-  document.title = `FACTURE-${year}-${num} ${period}`;
+  document.title = `INVOICE-${year}-${num} ${period}`;
 
   // Header
   set('inv-number',  `${year}-${num}`);
   set('inv-date',    fmtDate(today));
   set('inv-due',     fmtDate(due));
   set('inv-period',  period);
-  set('inv-op-type', sync.inv_opType || 'Prestation de services');
+  set('inv-op-type', sync.inv_opType || 'Provision of services');
 
   // Freelancer
   set('inv-name',      sync.inv_name || '');
@@ -187,9 +187,9 @@ async function loadAndRender() {
   set('inv-pay-days', payDays);
 
   // Legal / footer
-  set('inv-legal-note',   sync.inv_legalNote   || 'TVA non applicable - art. 259-1 du CGI');
+  set('inv-legal-note',   sync.inv_legalNote   || 'VAT not applicable - art. 259-1 of the French Tax Code');
   set('inv-footer-name',   sync.inv_name        || '');
-  set('inv-footer-status', sync.inv_legalStatus || 'Entrepreneur individuel');
+  set('inv-footer-status', sync.inv_legalStatus || 'Sole proprietor');
   set('inv-footer-addr',
     [sync.inv_address, sync.inv_city, sync.inv_country].filter(Boolean).join(' ')
   );
