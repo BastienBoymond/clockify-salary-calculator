@@ -332,7 +332,7 @@ form.addEventListener('submit', (e) => {
     savedMsg.classList.add('visible');
     setTimeout(() => savedMsg.classList.remove('visible'), 3000);
 
-    chrome.tabs.query({ url: 'https://app.clockify.me/dashboard*' }, (tabs) => {
+    chrome.tabs.query({ url: 'https://app.clockify.me/*' }, (tabs) => {
       tabs.forEach(tab => {
         chrome.tabs.sendMessage(tab.id, { type: 'SETTINGS_UPDATED' }).catch(() => {});
       });
