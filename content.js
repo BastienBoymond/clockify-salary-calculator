@@ -2,6 +2,8 @@
 
 const CARD_ID = 'csc-earnings-card';
 const WEEK_ID = 'csc-week-widget';
+const TRACKER_WEEK_CLASS = 'csc-tracker-week';
+const DAY_BADGE_CLASS = 'csc-day-badge';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -98,7 +100,7 @@ function buildCard(settings, hours) {
 function inject(timeEl, settings) {
   document.getElementById(CARD_ID)?.remove();
 
-  if (!settings.hourlyRate) return;
+  if (!settings.showDashboard || !settings.hourlyRate) return;
 
   const hours      = parseTime(timeEl.textContent);
   const headerItem = timeEl.closest('.cl-dashboard-card-header-item');
@@ -108,10 +110,19 @@ function inject(timeEl, settings) {
   headerItem.insertAdjacentElement('afterend', card);
 }
 
-function getSettings(cb) {
-  chrome.storage.sync.get(
-    ['hourlyRate', 'paidCurrency', 'receiveCurrency', 'socialCharges', 'profExpense', 'taxRate', 'exchangeRate'],
-    (data) => cb({
+const SETTINGS_KEYS = [
+  'hourlyRate', 'paidCurrency', 'receiveCurrency', 'socialCharges', 'profExpense', 'taxRate', 'exchangeRate',
+  'showDashboard', 'showCalendar', 'showTrackerDay', 'showTrackerWeek',
+];
+
+// Settings are cached so injection decisions are synchronous — the observer can
+// check "is my widget already present?" without waiting on an async storage read,
+// which is what lets us retry reliably instead of locking on a half-rendered page.
+let settings = null;
+
+function refreshSettings(cb) {
+  chrome.storage.sync.get(SETTINGS_KEYS, (data) => {
+    settings = {
       hourlyRate:      data.hourlyRate      || 0,
       paidCurrency:    data.paidCurrency    || 'EUR',
       receiveCurrency: data.receiveCurrency || 'EUR',
@@ -119,14 +130,14 @@ function getSettings(cb) {
       profExpense:     data.profExpense      || 0,
       taxRate:         data.taxRate          || 0,
       exchangeRate:    data.exchangeRate     || 1,
-    })
-  );
-}
-
-function tryInject() {
-  const timeEl = document.querySelector('[data-cy="total-time"]');
-  if (!timeEl) return;
-  getSettings((settings) => inject(timeEl, settings));
+      // Per-location widget toggles — default on (undefined !== false → true).
+      showDashboard:   data.showDashboard    !== false,
+      showCalendar:    data.showCalendar     !== false,
+      showTrackerDay:  data.showTrackerDay   !== false,
+      showTrackerWeek: data.showTrackerWeek  !== false,
+    };
+    if (cb) cb();
+  });
 }
 
 // ── Calendar week widget ────────────────────────────────────────────────────────
@@ -159,16 +170,17 @@ function weekSignature() {
   return [...headers].map((h) => h.textContent.trim()).join('|');
 }
 
-function buildWeekWidget(settings, totals) {
+function buildWeekWidget(settings, totals, { id = WEEK_ID, cls, label } = {}) {
   const { paidCurrency, receiveCurrency, exchangeRate, hourlyRate } = settings;
   const { hours, days } = totals;
   const hasRate = hourlyRate > 0;
   const { gross, net } = calculate(hours, settings);
   const same  = paidCurrency === receiveCurrency;
-  const label = days > 1 ? 'This week' : 'This day';
+  label = label || (days > 1 ? 'This week' : 'This day');
 
   const widget = document.createElement('div');
-  widget.id = WEEK_ID;
+  if (id) widget.id = id;
+  widget.className = 'csc-week-pill' + (cls ? ' ' + cls : '');
 
   widget.innerHTML = `
     <svg class="csc-week-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -209,6 +221,8 @@ function buildWeekWidget(settings, totals) {
 function injectWeek(settings) {
   document.getElementById(WEEK_ID)?.remove();
 
+  if (!settings.showCalendar) return;
+
   const totals = getWeekTotals();
   if (!totals) return;
 
@@ -219,24 +233,167 @@ function injectWeek(settings) {
   switchCal.insertAdjacentElement('afterend', buildWeekWidget(settings, totals));
 }
 
-function tryInjectWeek() {
-  if (!document.querySelector('switch-calendar')) return;
-  if (!document.querySelector('day-header')) return;
-  getSettings(injectWeek);
+function calendarReady() {
+  return !!document.querySelector('switch-calendar') && !!document.querySelector('day-header');
+}
+
+// ── Tracker page widgets ──────────────────────────────────────────────────────
+// The time-tracker list groups entries by day, each group preceded by an
+// <entry-group-header> showing "Total: HH:MM:SS". The whole range is summed by an
+// <approval-header> showing "Week total: HH:MM:SS". Clockify already gives us both
+// totals, so we just read them and append an earnings figure to each — no need to
+// sum individual entries.
+
+const DAY_TOTAL_SEL = '[data-cy="entry-header-total-duration"]';
+
+function removeTrackerWidgets() {
+  document.querySelectorAll('.' + DAY_BADGE_CLASS).forEach((b) => b.remove());
+  document.querySelectorAll('.' + TRACKER_WEEK_CLASS).forEach((w) => w.remove());
+}
+
+// Compact inline earnings badge appended next to a day's total duration.
+function buildDayBadge(settings, hours) {
+  const { paidCurrency, receiveCurrency, exchangeRate } = settings;
+  const { gross, net } = calculate(hours, settings);
+  const same       = paidCurrency === receiveCurrency;
+  const showGross  = Math.abs(gross - net) >= 0.005;
+
+  const badge = document.createElement('span');
+  badge.className = DAY_BADGE_CLASS;
+
+  badge.innerHTML = `
+    <svg class="csc-day-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="12" y1="1" x2="12" y2="23"/>
+      <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+    </svg>
+    <span class="csc-day-net">${fmt(net, paidCurrency)}</span>
+    ${showGross ? `<span class="csc-day-gross">of ${fmt(gross, paidCurrency)}</span>` : ''}
+    ${!same ? `<span class="csc-day-conv">${fmt(net * exchangeRate, receiveCurrency)}</span>` : ''}
+  `;
+
+  return badge;
+}
+
+function injectTracker(settings) {
+  removeTrackerWidgets();
+  if (!settings.hourlyRate) return;
+
+  // Per-day badge after each group header total (covers the sticky header too).
+  if (settings.showTrackerDay) {
+    document.querySelectorAll(DAY_TOTAL_SEL).forEach((el) => {
+      const hours = parseTime(el.textContent.trim());
+      el.insertAdjacentElement('afterend', buildDayBadge(settings, hours));
+    });
+  }
+
+  // A range pill next to every approval-header "Week total" — there may be
+  // several at once (This week, Last week, …) when the range spans weeks.
+  if (settings.showTrackerWeek) document.querySelectorAll('approval-header').forEach((header) => {
+    const weekEl = [...header.querySelectorAll('.cl-h2')]
+      .find((d) => TIME_RE.test(d.textContent.trim()));
+    if (!weekEl) return;
+    const hours = parseTime(weekEl.textContent.trim());
+    const label = header.querySelector('span')?.textContent.trim() || 'Total';
+    weekEl.insertAdjacentElement(
+      'afterend',
+      buildWeekWidget(settings, { hours }, { id: null, cls: TRACKER_WEEK_CLASS, label })
+    );
+  });
+}
+
+// Fingerprint of every day total plus every week total, so we only re-render on a
+// real change — range navigation or an edited entry — not on every unrelated
+// mutation (hover shadows, dropdowns, the running timer).
+function trackerSignature() {
+  const days = [...document.querySelectorAll(DAY_TOTAL_SEL)].map((d) => d.textContent.trim());
+  const weeks = [...document.querySelectorAll('approval-header')].map((h) => {
+    const el = [...h.querySelectorAll('.cl-h2')].find((d) => TIME_RE.test(d.textContent.trim()));
+    return el ? el.textContent.trim() : '';
+  });
+  if (!days.length && !weeks.length) return '';
+  return days.join('|') + '#' + weeks.join('|');
+}
+
+function trackerReady() {
+  return !!document.querySelector(DAY_TOTAL_SEL) || !!document.querySelector('approval-header');
+}
+
+// Have all expected tracker widgets actually landed in the DOM? With no rate set
+// we inject nothing, so "nothing present" is the correct, fully-injected state.
+function trackerFullyInjected() {
+  if (!settings.hourlyRate) return true;
+
+  // Expected counts depend on the toggles: a disabled widget expects zero.
+  const dayTargets = settings.showTrackerDay ? document.querySelectorAll(DAY_TOTAL_SEL).length : 0;
+  const dayBadges  = document.querySelectorAll('.' + DAY_BADGE_CLASS).length;
+  if (dayBadges !== dayTargets) return false;
+
+  const weekTargets = settings.showTrackerWeek
+    ? [...document.querySelectorAll('approval-header')].filter((h) =>
+        [...h.querySelectorAll('.cl-h2')].some((d) => TIME_RE.test(d.textContent.trim()))).length
+    : 0;
+  const weekPills = document.querySelectorAll('.' + TRACKER_WEEK_CLASS).length;
+  return weekPills === weekTargets;
+}
+
+// ── Injection orchestration ───────────────────────────────────────────────────
+
+function isDashboard() { return location.pathname.startsWith('/dashboard'); }
+function isCalendar()  { return location.pathname.startsWith('/calendar'); }
+function isTracker()   { return location.pathname.startsWith('/tracker'); }
+
+let lastTimeText   = '';
+let lastWeekKey    = '';
+let lastTrackerKey = '';
+
+// Single entry point for "make sure the right widget is on the current page".
+// Re-injects when the content signature changed OR when our widget isn't actually
+// present (Angular can wipe it, or the injection anchor rendered after the content
+// did). The key is committed only once the page is ready, so a half-rendered page
+// is retried on the next mutation instead of being locked out until a reload.
+function evaluateAndInject() {
+  if (!settings) return; // settings not loaded yet; bootstrap will run this
+
+  if (isDashboard()) {
+    const timeEl = document.querySelector('[data-cy="total-time"]');
+    if (!timeEl) return;
+    const key     = timeEl.textContent.trim();
+    const want    = settings.showDashboard && settings.hourlyRate > 0;
+    const present = !!document.getElementById(CARD_ID);
+    const full    = want ? present : !present;
+    if (key === lastTimeText && full) return;
+    lastTimeText = key;
+    inject(timeEl, settings);
+
+  } else if (isCalendar()) {
+    if (!calendarReady()) return;
+    const key     = weekSignature();
+    const present = !!document.getElementById(WEEK_ID);
+    const full    = settings.showCalendar ? present : !present;
+    if (key === lastWeekKey && full) return;
+    lastWeekKey = key;
+    injectWeek(settings);
+
+  } else if (isTracker()) {
+    if (!trackerReady()) return;
+    const key  = trackerSignature();
+    const full = trackerFullyInjected();
+    if (key === lastTrackerKey && full) return;
+    lastTrackerKey = key;
+    injectTracker(settings);
+  }
 }
 
 // ── SPA navigation detection ──────────────────────────────────────────────────
 
-function isDashboard() { return location.pathname.startsWith('/dashboard'); }
-function isCalendar()  { return location.pathname.startsWith('/calendar'); }
-
 function onNavigate() {
   if (!isDashboard()) document.getElementById(CARD_ID)?.remove();
   if (!isCalendar())  document.getElementById(WEEK_ID)?.remove();
-  lastTimeText = '';
-  lastWeekKey  = '';
-  if (isDashboard()) tryInject();
-  if (isCalendar())  tryInjectWeek();
+  if (!isTracker())   removeTrackerWidgets();
+  lastTimeText   = '';
+  lastWeekKey    = '';
+  lastTrackerKey = '';
+  evaluateAndInject();
 }
 
 ['pushState', 'replaceState'].forEach((method) => {
@@ -253,38 +410,21 @@ window.addEventListener('locationchange', onNavigate);
 
 // ── MutationObserver ──────────────────────────────────────────────────────────
 
-let lastTimeText = '';
-let lastWeekKey  = '';
-let scheduled    = false;
+let scheduled = false;
 
 const observer = new MutationObserver(() => {
-  if (!isDashboard() && !isCalendar()) return;
+  if (!isDashboard() && !isCalendar() && !isTracker()) return;
   if (scheduled) return;
   scheduled = true;
   requestAnimationFrame(() => {
     scheduled = false;
-    if (isDashboard()) {
-      const timeEl = document.querySelector('[data-cy="total-time"]');
-      if (!timeEl) return;
-      const text = timeEl.textContent.trim();
-      if (text !== lastTimeText) {
-        lastTimeText = text;
-        tryInject();
-      }
-    } else if (isCalendar()) {
-      const key = weekSignature();
-      if (key && key !== lastWeekKey) {
-        lastWeekKey = key;
-        tryInjectWeek();
-      }
-    }
+    evaluateAndInject();
   });
 });
 
 observer.observe(document.body, { childList: true, subtree: true, characterData: true });
 
-if (isDashboard()) tryInject();
-if (isCalendar())  tryInjectWeek();
+refreshSettings(evaluateAndInject);
 
 // ── Project extraction ────────────────────────────────────────────────────────
 
@@ -321,10 +461,12 @@ function extractProjects() {
 
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   if (msg.type === 'SETTINGS_UPDATED') {
-    lastTimeText = '';
-    lastWeekKey  = '';
-    if (isDashboard()) tryInject();
-    if (isCalendar())  tryInjectWeek();
+    refreshSettings(() => {
+      lastTimeText   = '';
+      lastWeekKey    = '';
+      lastTrackerKey = '';
+      evaluateAndInject();
+    });
   }
   if (msg.type === 'GET_PROJECTS') {
     sendResponse({ projects: extractProjects() });

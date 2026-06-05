@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Clockify Salary Calculator",
-  "version": "1.4.0",
-  "description": "Display your salary earnings next to total time on the Clockify dashboard and calendar.",
+  "version": "1.5.0",
+  "description": "Display your salary earnings next to total time on the Clockify dashboard, calendar, and time tracker.",
   "permissions": ["storage", "tabs"],
   "host_permissions": [
     "https://app.clockify.me/*",

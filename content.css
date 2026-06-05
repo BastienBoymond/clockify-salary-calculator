@@ -143,11 +143,12 @@
   margin-top: 4px;
 }
 
-/* ── Calendar week widget ────────────────────────────────────────────────────
-   Horizontal pill injected next to the Calendar / Week / Day buttons. Same
+/* ── Week pill ────────────────────────────────────────────────────────────────
+   Horizontal pill shared by the calendar page (next to the Calendar / Week / Day
+   buttons) and the tracker page (next to the approval-header "Week total"). Same
    theme tokens as the card above, so it tracks Clockify's light/dark theme.
    ─────────────────────────────────────────────────────────────────────────── */
-#csc-week-widget {
+.csc-week-pill {
   display: inline-flex;
   align-items: center;
   gap: 13px;
@@ -165,23 +166,24 @@
   overflow: hidden;
   flex-shrink: 0;
   white-space: nowrap;
+  vertical-align: middle;
 }
 
-#csc-week-widget .csc-week-icon {
+.csc-week-pill .csc-week-icon {
   width: 15px; height: 15px;
   stroke: #16a34a;
   stroke-width: 2.5;
   flex-shrink: 0;
 }
 
-#csc-week-widget .csc-week-seg {
+.csc-week-pill .csc-week-seg {
   display: flex;
   flex-direction: column;
   justify-content: center;
   line-height: 1.18;
 }
 
-#csc-week-widget .csc-week-lbl {
+.csc-week-pill .csc-week-lbl {
   font-size: 9px;
   font-weight: 700;
   text-transform: uppercase;
@@ -189,33 +191,79 @@
   color: var(--ui-input-placeholder, #94a3b8);
 }
 
-#csc-week-widget .csc-week-hours {
+.csc-week-pill .csc-week-hours {
   font-size: 15px;
   font-weight: 700;
   color: var(--ui-global-text-color, #1e293b);
 }
 
-#csc-week-widget .csc-week-net {
+.csc-week-pill .csc-week-net {
   font-size: 15px;
   font-weight: 800;
   color: #16a34a;
 }
 
-#csc-week-widget .csc-week-gross {
+.csc-week-pill .csc-week-gross {
   font-size: 14px;
   font-weight: 600;
   color: var(--ui-input-placeholder, #94a3b8);
 }
 
-#csc-week-widget .csc-week-conv {
+.csc-week-pill .csc-week-conv {
   font-size: 14px;
   font-weight: 700;
   color: #0288d1;
 }
 
-#csc-week-widget .csc-week-div {
+.csc-week-pill .csc-week-div {
   width: 1px;
   align-self: stretch;
   margin: 7px 0;
   background: var(--ui-elevation-system-types-default-border-color, #e2e8f0);
+}
+
+/* ── Tracker per-day earnings badge ───────────────────────────────────────────
+   Compact inline chip appended right after each day group's total duration in
+   the time-tracker list. Sits between the duration and the bulk-edit icon.
+   ─────────────────────────────────────────────────────────────────────────── */
+.csc-day-badge {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  margin: 0 6px 0 10px;
+  padding: 3px 9px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: rgba(34, 197, 94, 0.12);
+  border: 1px solid rgba(34, 197, 94, 0.28);
+  border-radius: 7px;
+  line-height: 1.1;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.csc-day-badge .csc-day-icon {
+  width: 12px; height: 12px;
+  stroke: #16a34a;
+  stroke-width: 2.5;
+  flex-shrink: 0;
+  align-self: center;
+}
+
+.csc-day-badge .csc-day-net {
+  font-size: 14px;
+  font-weight: 800;
+  color: #16a34a;
+  letter-spacing: -0.01em;
+}
+
+.csc-day-badge .csc-day-gross {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ui-input-placeholder, #94a3b8);
+}
+
+.csc-day-badge .csc-day-conv {
+  font-size: 12px;
+  font-weight: 700;
+  color: #0288d1;
 }

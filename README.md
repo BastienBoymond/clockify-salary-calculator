@@ -10,6 +10,8 @@ A Chrome extension that displays your real net take-home earnings directly on th
 
 - **Live earnings card** injected into your Clockify dashboard, updating as you track time
 - **Weekly recap widget** on the calendar page — total hours plus net/gross earnings for the displayed week, next to the Week/Day buttons
+- **Time tracker earnings** — a per-day net/gross badge next to each day group's total, plus a recap pill next to the "Week total" for the whole visible range
+- **Per-location widget toggles** in the Settings tab — independently switch each widget (dashboard card, calendar recap, tracker daily, tracker weekly) on or off; changes apply live
 - **Net salary calculation** with configurable social charges, professional expense deductions, and income tax
 - **Multi-currency support** with live exchange rates (via [open.er-api.com](https://open.er-api.com))
 - **Earnings simulator** in the popup with presets (1h, 1d, 1w, 1m)
@@ -53,8 +55,8 @@ No build step or dependencies required — pure vanilla JavaScript.
 ```
 clockify-salary-calculator/
 ├── manifest.json      # Chrome extension manifest (V3)
-├── content.js         # Injects and updates the earnings card on the dashboard
-├── content.css        # Styling for the injected card
+├── content.js         # Injects earnings on the dashboard, calendar, and time tracker
+├── content.css        # Styling for the injected card, week pill, and day badges
 ├── popup/
 │   ├── popup.html     # Settings & simulator UI
 │   └── popup.js       # Settings logic, simulation, live rate fetch

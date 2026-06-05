@@ -41,6 +41,13 @@ const simBody               = document.getElementById('sim-body');
 const generateBtn           = document.getElementById('generate-btn');
 const invStatus             = document.getElementById('inv-status');
 
+const widgetToggleEls = {
+  showDashboard:   document.getElementById('widget-dashboard'),
+  showCalendar:    document.getElementById('widget-calendar'),
+  showTrackerDay:  document.getElementById('widget-tracker-day'),
+  showTrackerWeek: document.getElementById('widget-tracker-week'),
+};
+
 // ── Tab switching ─────────────────────────────────────────────────────────────
 
 document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -225,6 +232,7 @@ function fillInvoiceFields(data) {
 
 chrome.storage.sync.get(
   ['hourlyRate', 'paidCurrency', 'receiveCurrency', 'socialCharges', 'profExpense', 'taxRate', 'exchangeRate',
+   'showDashboard', 'showCalendar', 'showTrackerDay', 'showTrackerWeek',
    ...INVOICE_KEYS],
   (data) => {
     const paid    = data.paidCurrency    || 'EUR';
@@ -241,6 +249,11 @@ chrome.storage.sync.get(
     if (data.profExpense   != null) profExpenseEl.value   = data.profExpense;
     if (data.taxRate       != null) taxRateEl.value       = data.taxRate;
     if (data.exchangeRate  != null) exchangeRateEl.value  = data.exchangeRate;
+
+    // Widget toggles default to on when unset (undefined !== false → checked).
+    for (const [key, el] of Object.entries(widgetToggleEls)) {
+      el.checked = data[key] !== false;
+    }
 
     fillInvoiceFields(data);
 
@@ -315,6 +328,28 @@ fetchRateBtn.addEventListener('click', async () => {
 
 // ── Save settings ─────────────────────────────────────────────────────────────
 
+// Tell every open Clockify tab to re-read settings and re-render its widgets.
+function notifyTabs() {
+  chrome.tabs.query({ url: 'https://app.clockify.me/*' }, (tabs) => {
+    tabs.forEach(tab => {
+      chrome.tabs.sendMessage(tab.id, { type: 'SETTINGS_UPDATED' }).catch(() => {});
+    });
+  });
+}
+
+function readWidgetToggles() {
+  const out = {};
+  for (const [key, el] of Object.entries(widgetToggleEls)) out[key] = el.checked;
+  return out;
+}
+
+// Widget toggles apply live — persist and notify the moment one flips, no Save needed.
+Object.values(widgetToggleEls).forEach(el => {
+  el.addEventListener('change', () => {
+    chrome.storage.sync.set(readWidgetToggles(), notifyTabs);
+  });
+});
+
 form.addEventListener('submit', (e) => {
   e.preventDefault();
 
@@ -326,17 +361,13 @@ form.addEventListener('submit', (e) => {
     profExpense:     parseFloat(profExpenseEl.value)   || 0,
     taxRate:         parseFloat(taxRateEl.value)       || 0,
     exchangeRate:    parseFloat(exchangeRateEl.value)  || 1,
+    ...readWidgetToggles(),
   };
 
   chrome.storage.sync.set(settings, () => {
     savedMsg.classList.add('visible');
     setTimeout(() => savedMsg.classList.remove('visible'), 3000);
-
-    chrome.tabs.query({ url: 'https://app.clockify.me/*' }, (tabs) => {
-      tabs.forEach(tab => {
-        chrome.tabs.sendMessage(tab.id, { type: 'SETTINGS_UPDATED' }).catch(() => {});
-      });
-    });
+    notifyTabs();
   });
 });
 
