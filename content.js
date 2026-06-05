@@ -1,6 +1,7 @@
 'use strict';
 
 const CARD_ID = 'csc-earnings-card';
+const WEEK_ID = 'csc-week-widget';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -20,6 +21,14 @@ function fmt(amount, currency) {
   } catch {
     return `${amount.toFixed(2)} ${currency}`;
   }
+}
+
+// Decimal hours → "H:MM" duration, matching how Clockify displays day totals.
+function formatHM(hours) {
+  const totalMin = Math.round(hours * 60);
+  const h = Math.floor(totalMin / 60);
+  const m = totalMin % 60;
+  return `${h}:${String(m).padStart(2, '0')}`;
 }
 
 function calculate(hours, s) {
@@ -99,36 +108,135 @@ function inject(timeEl, settings) {
   headerItem.insertAdjacentElement('afterend', card);
 }
 
+function getSettings(cb) {
+  chrome.storage.sync.get(
+    ['hourlyRate', 'paidCurrency', 'receiveCurrency', 'socialCharges', 'profExpense', 'taxRate', 'exchangeRate'],
+    (data) => cb({
+      hourlyRate:      data.hourlyRate      || 0,
+      paidCurrency:    data.paidCurrency    || 'EUR',
+      receiveCurrency: data.receiveCurrency || 'EUR',
+      socialCharges:   data.socialCharges   || 0,
+      profExpense:     data.profExpense      || 0,
+      taxRate:         data.taxRate          || 0,
+      exchangeRate:    data.exchangeRate     || 1,
+    })
+  );
+}
+
 function tryInject() {
   const timeEl = document.querySelector('[data-cy="total-time"]');
   if (!timeEl) return;
+  getSettings((settings) => inject(timeEl, settings));
+}
 
-  chrome.storage.sync.get(
-    ['hourlyRate', 'paidCurrency', 'receiveCurrency', 'socialCharges', 'profExpense', 'taxRate', 'exchangeRate'],
-    (data) => {
-      inject(timeEl, {
-        hourlyRate:      data.hourlyRate      || 0,
-        paidCurrency:    data.paidCurrency    || 'EUR',
-        receiveCurrency: data.receiveCurrency || 'EUR',
-        socialCharges:   data.socialCharges   || 0,
-        profExpense:     data.profExpense      || 0,
-        taxRate:         data.taxRate          || 0,
-        exchangeRate:    data.exchangeRate     || 1,
-      });
-    }
-  );
+// ── Calendar week widget ────────────────────────────────────────────────────────
+
+const TIME_RE = /^\d{1,2}:\d{2}:\d{2}$/;
+
+// Sum the per-day totals shown in each calendar day header. Each <day-header>
+// holds a day label and an "HH:MM:SS" total; we read only the total, never the
+// per-event durations inside the grid, so nothing is double-counted.
+// Returns { hours, days } or null when the calendar grid hasn't rendered yet.
+function getWeekTotals() {
+  const headers = document.querySelectorAll('day-header');
+  if (!headers.length) return null;
+
+  let hours = 0;
+  headers.forEach((h) => {
+    const timeDiv = [...h.querySelectorAll('div')]
+      .find((d) => TIME_RE.test(d.textContent.trim()));
+    if (timeDiv) hours += parseTime(timeDiv.textContent.trim());
+  });
+  return { hours, days: headers.length };
+}
+
+// Fingerprint of the visible range (day labels + totals) so we only re-render on
+// a real change — week navigation or an edited entry — and not on every unrelated
+// calendar mutation (drag overlays, the live time indicator, …).
+function weekSignature() {
+  const headers = document.querySelectorAll('day-header');
+  if (!headers.length) return '';
+  return [...headers].map((h) => h.textContent.trim()).join('|');
+}
+
+function buildWeekWidget(settings, totals) {
+  const { paidCurrency, receiveCurrency, exchangeRate, hourlyRate } = settings;
+  const { hours, days } = totals;
+  const hasRate = hourlyRate > 0;
+  const { gross, net } = calculate(hours, settings);
+  const same  = paidCurrency === receiveCurrency;
+  const label = days > 1 ? 'This week' : 'This day';
+
+  const widget = document.createElement('div');
+  widget.id = WEEK_ID;
+
+  widget.innerHTML = `
+    <svg class="csc-week-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="12" y1="1" x2="12" y2="23"/>
+      <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+    </svg>
+
+    <div class="csc-week-seg">
+      <span class="csc-week-lbl">${label}</span>
+      <span class="csc-week-hours">${formatHM(hours)}</span>
+    </div>
+
+    ${hasRate ? `
+    <div class="csc-week-div"></div>
+    <div class="csc-week-seg">
+      <span class="csc-week-lbl">Net</span>
+      <span class="csc-week-net">${fmt(net, paidCurrency)}</span>
+    </div>
+
+    <div class="csc-week-div"></div>
+    <div class="csc-week-seg">
+      <span class="csc-week-lbl">Gross</span>
+      <span class="csc-week-gross">${fmt(gross, paidCurrency)}</span>
+    </div>
+
+    ${!same ? `
+    <div class="csc-week-div"></div>
+    <div class="csc-week-seg">
+      <span class="csc-week-lbl">Net ${receiveCurrency}</span>
+      <span class="csc-week-conv">${fmt(net * exchangeRate, receiveCurrency)}</span>
+    </div>` : ''}
+    ` : ''}
+  `;
+
+  return widget;
+}
+
+function injectWeek(settings) {
+  document.getElementById(WEEK_ID)?.remove();
+
+  const totals = getWeekTotals();
+  if (!totals) return;
+
+  // Sit inline, right after the Calendar / Week / Day button group.
+  const switchCal = document.querySelector('switch-calendar');
+  if (!switchCal) return;
+
+  switchCal.insertAdjacentElement('afterend', buildWeekWidget(settings, totals));
+}
+
+function tryInjectWeek() {
+  if (!document.querySelector('switch-calendar')) return;
+  if (!document.querySelector('day-header')) return;
+  getSettings(injectWeek);
 }
 
 // ── SPA navigation detection ──────────────────────────────────────────────────
 
+function isDashboard() { return location.pathname.startsWith('/dashboard'); }
+function isCalendar()  { return location.pathname.startsWith('/calendar'); }
+
 function onNavigate() {
-  if (!location.pathname.startsWith('/dashboard')) {
-    document.getElementById(CARD_ID)?.remove();
-    lastTimeText = '';
-    return;
-  }
+  if (!isDashboard()) document.getElementById(CARD_ID)?.remove();
+  if (!isCalendar())  document.getElementById(WEEK_ID)?.remove();
   lastTimeText = '';
-  tryInject();
+  lastWeekKey  = '';
+  if (isDashboard()) tryInject();
+  if (isCalendar())  tryInjectWeek();
 }
 
 ['pushState', 'replaceState'].forEach((method) => {
@@ -146,27 +254,37 @@ window.addEventListener('locationchange', onNavigate);
 // ── MutationObserver ──────────────────────────────────────────────────────────
 
 let lastTimeText = '';
+let lastWeekKey  = '';
 let scheduled    = false;
 
 const observer = new MutationObserver(() => {
-  if (!location.pathname.startsWith('/dashboard')) return;
+  if (!isDashboard() && !isCalendar()) return;
   if (scheduled) return;
   scheduled = true;
   requestAnimationFrame(() => {
     scheduled = false;
-    const timeEl = document.querySelector('[data-cy="total-time"]');
-    if (!timeEl) return;
-    const text = timeEl.textContent.trim();
-    if (text !== lastTimeText) {
-      lastTimeText = text;
-      tryInject();
+    if (isDashboard()) {
+      const timeEl = document.querySelector('[data-cy="total-time"]');
+      if (!timeEl) return;
+      const text = timeEl.textContent.trim();
+      if (text !== lastTimeText) {
+        lastTimeText = text;
+        tryInject();
+      }
+    } else if (isCalendar()) {
+      const key = weekSignature();
+      if (key && key !== lastWeekKey) {
+        lastWeekKey = key;
+        tryInjectWeek();
+      }
     }
   });
 });
 
 observer.observe(document.body, { childList: true, subtree: true, characterData: true });
 
-if (location.pathname.startsWith('/dashboard')) tryInject();
+if (isDashboard()) tryInject();
+if (isCalendar())  tryInjectWeek();
 
 // ── Project extraction ────────────────────────────────────────────────────────
 
@@ -204,7 +322,9 @@ function extractProjects() {
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   if (msg.type === 'SETTINGS_UPDATED') {
     lastTimeText = '';
-    tryInject();
+    lastWeekKey  = '';
+    if (isDashboard()) tryInject();
+    if (isCalendar())  tryInjectWeek();
   }
   if (msg.type === 'GET_PROJECTS') {
     sendResponse({ projects: extractProjects() });

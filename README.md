@@ -9,6 +9,7 @@ A Chrome extension that displays your real net take-home earnings directly on th
 ## Features
 
 - **Live earnings card** injected into your Clockify dashboard, updating as you track time
+- **Weekly recap widget** on the calendar page — total hours plus net/gross earnings for the displayed week, next to the Week/Day buttons
 - **Net salary calculation** with configurable social charges, professional expense deductions, and income tax
 - **Multi-currency support** with live exchange rates (via [open.er-api.com](https://open.er-api.com))
 - **Earnings simulator** in the popup with presets (1h, 1d, 1w, 1m)

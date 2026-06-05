@@ -142,3 +142,80 @@
   padding-top: 6px;
   margin-top: 4px;
 }
+
+/* ── Calendar week widget ────────────────────────────────────────────────────
+   Horizontal pill injected next to the Calendar / Week / Day buttons. Same
+   theme tokens as the card above, so it tracks Clockify's light/dark theme.
+   ─────────────────────────────────────────────────────────────────────────── */
+#csc-week-widget {
+  display: inline-flex;
+  align-items: center;
+  gap: 13px;
+  height: 40px;
+  box-sizing: border-box;
+  margin-left: 12px;
+  padding: 0 14px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: var(--ui-elevation-system-types-default-background, #ffffff);
+  color: var(--ui-global-text-color, #1e293b);
+  border: 1px solid var(--ui-elevation-system-types-default-border-color, #e2e8f0);
+  border-radius: 8px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  position: relative;
+  overflow: hidden;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+#csc-week-widget .csc-week-icon {
+  width: 15px; height: 15px;
+  stroke: #16a34a;
+  stroke-width: 2.5;
+  flex-shrink: 0;
+}
+
+#csc-week-widget .csc-week-seg {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  line-height: 1.18;
+}
+
+#csc-week-widget .csc-week-lbl {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ui-input-placeholder, #94a3b8);
+}
+
+#csc-week-widget .csc-week-hours {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ui-global-text-color, #1e293b);
+}
+
+#csc-week-widget .csc-week-net {
+  font-size: 15px;
+  font-weight: 800;
+  color: #16a34a;
+}
+
+#csc-week-widget .csc-week-gross {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ui-input-placeholder, #94a3b8);
+}
+
+#csc-week-widget .csc-week-conv {
+  font-size: 14px;
+  font-weight: 700;
+  color: #0288d1;
+}
+
+#csc-week-widget .csc-week-div {
+  width: 1px;
+  align-self: stretch;
+  margin: 7px 0;
+  background: var(--ui-elevation-system-types-default-border-color, #e2e8f0);
+}
