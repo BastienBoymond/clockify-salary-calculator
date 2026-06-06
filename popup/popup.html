@@ -251,6 +251,42 @@
     .row-2 .field { flex: 1; }
     .row-2 .field.narrow { flex: 0 0 100px; }
 
+    /* ── Widget toggles ───────────────────────────────────── */
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 6px 0;
+    }
+    .toggle-info { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+    .toggle-title { font-size: 12px; font-weight: 600; color: var(--text); }
+    .toggle-sub   { font-size: 10px; color: var(--muted); }
+    .toggle-divider { border: none; border-top: 1px solid var(--hairline); margin: 0; }
+
+    .switch { position: relative; display: inline-block; width: 38px; height: 22px; flex-shrink: 0; }
+    .switch input { position: absolute; opacity: 0; width: 0; height: 0; }
+    .switch .slider {
+      position: absolute; inset: 0;
+      background: var(--border);
+      border-radius: 99px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .switch .slider::before {
+      content: '';
+      position: absolute;
+      height: 16px; width: 16px;
+      left: 3px; top: 3px;
+      background: #fff;
+      border-radius: 50%;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.25);
+      transition: transform 0.2s;
+    }
+    .switch input:checked + .slider { background: var(--blue); }
+    .switch input:checked + .slider::before { transform: translateX(16px); }
+    .switch input:focus-visible + .slider { box-shadow: 0 0 0 3px rgba(3,169,244,0.25); }
+
     .arrow-sep {
       align-self: flex-end;
       padding-bottom: 9px;
@@ -564,6 +600,17 @@
       <polyline points="17 8 12 3 7 8"/>
       <line x1="12" y1="3" x2="12" y2="15"/>
     </symbol>
+    <symbol id="ico-sliders" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="4" y1="21" x2="4" y2="14"/>
+      <line x1="4" y1="10" x2="4" y2="3"/>
+      <line x1="12" y1="21" x2="12" y2="12"/>
+      <line x1="12" y1="8" x2="12" y2="3"/>
+      <line x1="20" y1="21" x2="20" y2="16"/>
+      <line x1="20" y1="12" x2="20" y2="3"/>
+      <line x1="1" y1="14" x2="7" y2="14"/>
+      <line x1="9" y1="8" x2="15" y2="8"/>
+      <line x1="17" y1="16" x2="23" y2="16"/>
+    </symbol>
     <symbol id="ico-settings" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
       <circle cx="12" cy="12" r="3"/>
       <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
@@ -689,6 +736,59 @@
             </button>
           </div>
           <div id="rate-status"></div>
+        </div>
+      </div>
+
+      <!-- Widgets -->
+      <div class="card">
+        <div class="card-header">
+          <svg class="icon" viewBox="0 0 24 24"><use href="#ico-sliders"/></svg>
+          Widgets
+        </div>
+        <div class="card-body" style="gap:0">
+          <div class="toggle-row">
+            <div class="toggle-info">
+              <div class="toggle-title">Dashboard earnings card</div>
+              <div class="toggle-sub">On /dashboard, next to total time</div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="widget-dashboard" checked />
+              <span class="slider"></span>
+            </label>
+          </div>
+          <hr class="toggle-divider" />
+          <div class="toggle-row">
+            <div class="toggle-info">
+              <div class="toggle-title">Calendar week recap</div>
+              <div class="toggle-sub">On /calendar, next to the view buttons</div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="widget-calendar" checked />
+              <span class="slider"></span>
+            </label>
+          </div>
+          <hr class="toggle-divider" />
+          <div class="toggle-row">
+            <div class="toggle-info">
+              <div class="toggle-title">Tracker daily earnings</div>
+              <div class="toggle-sub">On /tracker, next to each day total</div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="widget-tracker-day" checked />
+              <span class="slider"></span>
+            </label>
+          </div>
+          <hr class="toggle-divider" />
+          <div class="toggle-row">
+            <div class="toggle-info">
+              <div class="toggle-title">Tracker weekly total</div>
+              <div class="toggle-sub">On /tracker, next to each "Week total"</div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="widget-tracker-week" checked />
+              <span class="slider"></span>
+            </label>
+          </div>
         </div>
       </div>
 
