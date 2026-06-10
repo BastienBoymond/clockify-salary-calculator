@@ -1,50 +1,14 @@
-'use strict';
+// Printable invoice page. Reads the one-shot payload the popup stored in
+// chrome.storage.local (inv_current) plus the persisted invoice settings in
+// sync storage, renders the document, and keeps totals live while the user
+// edits the contenteditable fields.
 
-// ── Format helpers ────────────────────────────────────────────────────────────
-
-function fmtFr(num, decimals = 2) {
-  const n = Math.abs(num);
-  const [int, dec] = n.toFixed(decimals).split('.');
-  const intFmt = int.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
-  return `${intFmt},${dec}`;
-}
-
-const CURRENCY_LABELS = {
-  USD: '$US', EUR: '€', GBP: '£', CHF: 'CHF',
-  CAD: 'CA$', AUD: 'A$', JPY: '¥', CNY: '¥',
-};
+import { CURRENCY_LABELS } from '../shared/currencies.js';
+import { parseTime, fmtFr, parseFr, fmtDate, addDays } from '../shared/format.js';
 
 function fmtCurrency(amount, curr) {
   const label = CURRENCY_LABELS[curr] || curr;
   return `${fmtFr(amount)} ${label}`;
-}
-
-function parseFr(str) {
-  return parseFloat((str || '0').replace(/[ \s]/g, '').replace(',', '.')) || 0;
-}
-
-function parseTime(text) {
-  const parts = (text || '').trim().split(':').map(Number);
-  if (parts.length === 3) return parts[0] + parts[1] / 60 + parts[2] / 3600;
-  if (parts.length === 2) return parts[0] + parts[1] / 60;
-  return 0;
-}
-
-function toISODate(ddmmyyyy) {
-  const [d, m, y] = ddmmyyyy.split('/');
-  return `${y}-${m}-${d}`;
-}
-
-function fmtDate(iso) {
-  if (!iso) return '';
-  const [y, m, d] = iso.split('-');
-  return `${d}/${m}/${y}`;
-}
-
-function addDays(iso, days) {
-  const dt = new Date(iso + 'T00:00:00');
-  dt.setDate(dt.getDate() + days);
-  return dt.toISOString().split('T')[0];
 }
 
 // ── State ─────────────────────────────────────────────────────────────────────
@@ -115,10 +79,11 @@ function addRow({ name = '', date = '', hours = 0, price = 0 } = {}) {
 // ── Load & render ─────────────────────────────────────────────────────────────
 
 async function loadAndRender() {
-  const [local, sync] = await Promise.all([
-    new Promise(r => chrome.storage.local.get('inv_current', d => r(d.inv_current || {}))),
-    new Promise(r => chrome.storage.sync.get(null, r)),
+  const [localData, sync] = await Promise.all([
+    chrome.storage.local.get('inv_current'),
+    chrome.storage.sync.get(null),
   ]);
+  const local = localData.inv_current || {};
 
   invoiceCurrency = local.currency || sync.paidCurrency || 'USD';
   bceRate         = local.bceRate  || 1;

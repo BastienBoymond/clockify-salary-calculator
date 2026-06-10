@@ -1,6 +1,11 @@
-'use strict';
+// Auto-fill the Invoice tab from an existing invoice PDF. Reads the pdf.js
+// text layer, reconstructs rows from glyph positions, then detects fields by
+// shape (email/phone regexes), by label (Bank:, IBAN:, …), and by layout
+// (freelancer left column, client right column).
 
-// PDF.js worker
+import { INVOICE_FIELD_IDS } from '../shared/invoice-fields.js';
+
+// PDF.js worker (pdfjsLib is the classic vendor script loaded by popup.html).
 pdfjsLib.GlobalWorkerOptions.workerSrc = chrome.runtime.getURL('popup/vendor/pdf.worker.min.js');
 
 // ── DOM refs ──────────────────────────────────────────────────────────────────
@@ -8,27 +13,6 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = chrome.runtime.getURL('popup/vendor/pdf
 const importBtn    = document.getElementById('import-pdf-btn');
 const importInput  = document.getElementById('import-pdf-input');
 const importStatus = document.getElementById('import-status');
-
-const FIELD_TO_DOM = {
-  inv_name:          'inv-name',
-  inv_address:       'inv-address',
-  inv_city:          'inv-city',
-  inv_country:       'inv-country',
-  inv_phone:         'inv-phone',
-  inv_email:         'inv-email',
-  inv_siret:         'inv-siret',
-  inv_clientName:    'inv-client-name',
-  inv_clientAddress: 'inv-client-address',
-  inv_clientCity:    'inv-client-city',
-  inv_clientCountry: 'inv-client-country',
-  inv_bank:          'inv-bank',
-  inv_swift:         'inv-swift',
-  inv_iban:          'inv-iban',
-  inv_opType:        'inv-op-type',
-  inv_paymentDays:   'inv-payment-days',
-  inv_legalNote:     'inv-legal-note',
-  inv_legalStatus:   'inv-legal-status',
-};
 
 function showStatus(msg, type = '') {
   importStatus.textContent = msg;
@@ -199,7 +183,7 @@ function parse(rows) {
 async function applyData(data) {
   let filled = 0;
   const toSave = {};
-  for (const [key, id] of Object.entries(FIELD_TO_DOM)) {
+  for (const [key, id] of Object.entries(INVOICE_FIELD_IDS)) {
     if (data[key] == null || data[key] === '') continue;
     const el = document.getElementById(id);
     if (el) {
@@ -209,7 +193,7 @@ async function applyData(data) {
     toSave[key] = data[key];
   }
   if (Object.keys(toSave).length > 0) {
-    await new Promise(r => chrome.storage.sync.set(toSave, r));
+    await chrome.storage.sync.set(toSave);
   }
   return filled;
 }

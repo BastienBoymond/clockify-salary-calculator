@@ -54,13 +54,41 @@ No build step or dependencies required — pure vanilla JavaScript.
 
 ```
 clockify-salary-calculator/
-├── manifest.json      # Chrome extension manifest (V3)
-├── content.js         # Injects earnings on the dashboard, calendar, and time tracker
-├── content.css        # Styling for the injected card, week pill, and day badges
+├── manifest.json          # Chrome extension manifest (V3)
+├── shared/                # Modules used by every surface
+│   ├── money.js           # The net-pay calculation (single source of truth)
+│   ├── format.js          # Time, currency, French-number & date formatting
+│   ├── currencies.js      # Currency lists, symbols, invoice labels
+│   ├── settings.js        # Settings keys, defaults, load helper
+│   └── invoice-fields.js  # Invoice storage-key ↔ form-field map
+├── content/               # Injected into app.clockify.me
+│   ├── loader.js          # Classic stub that imports the ES-module entry
+│   ├── main.js            # Orchestration: observer, SPA navigation, injection
+│   ├── selectors.js       # Every Clockify selector & scraper (one-file fix on UI changes)
+│   ├── widgets.js         # Earnings card / week pill / day badge builders
+│   └── content.css        # Styling for the injected widgets
 ├── popup/
-│   ├── popup.html     # Settings & simulator UI
-│   └── popup.js       # Settings logic, simulation, live rate fetch
-└── icons/             # Extension icons (16, 32, 48, 128px)
+│   ├── popup.html         # Settings & invoice UI
+│   ├── popup.css          # Popup styling (incl. dark theme variables)
+│   ├── popup.js           # Settings tab: load/save, currencies, live FX rate
+│   ├── simulator.js       # Earnings simulator
+│   ├── invoice-tab.js     # Invoice fields & generation
+│   ├── pdf-import.js      # Auto-fill invoice settings from a PDF
+│   └── theme.js           # Dark/light/system theme switching
+├── invoice/               # Printable invoice page (invoice.html/.css/.js)
+├── test/                  # Unit tests for the money & formatting modules
+└── icons/                 # Extension icons (16, 32, 48, 128px)
+```
+
+The content script reacts to `chrome.storage.onChanged`, so settings saved in the popup (or synced from another device) re-render the widgets live — no messaging needed.
+
+## Development
+
+The extension itself has no build step — load the folder as-is. Dev dependencies are only used for tests:
+
+```
+npm install
+npm test
 ```
 
 ## License
