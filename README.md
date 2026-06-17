@@ -5,6 +5,11 @@ A Chrome extension that displays your real net take-home earnings directly on th
 ![Chrome Extension](https://img.shields.io/badge/Chrome-Extension-4285F4?logo=google-chrome&logoColor=white)
 ![Manifest V3](https://img.shields.io/badge/Manifest-V3-green)
 ![No Dependencies](https://img.shields.io/badge/dependencies-none-brightgreen)
+[![Chrome Web Store Version](https://img.shields.io/chrome-web-store/v/oocmjejoijcaddcfgommkhfpbbhbhabo?logo=googlechrome&logoColor=white&label=Chrome%20Web%20Store)][store]
+[![Chrome Web Store Users](https://img.shields.io/chrome-web-store/users/oocmjejoijcaddcfgommkhfpbbhbhabo?label=users)][store]
+[![Chrome Web Store Rating](https://img.shields.io/chrome-web-store/rating/oocmjejoijcaddcfgommkhfpbbhbhabo?label=rating)][store]
+
+[store]: https://chromewebstore.google.com/detail/oocmjejoijcaddcfgommkhfpbbhbhabo
 
 ## Features
 
@@ -29,6 +34,12 @@ Net         = Taxable − (Taxable × income tax rate %)
 ```
 
 ## Installation
+
+### From the Chrome Web Store (recommended)
+
+[**Install Clockify Salary Calculator →**][store]
+
+### From source (development)
 
 No build step or dependencies required — pure vanilla JavaScript.
 
