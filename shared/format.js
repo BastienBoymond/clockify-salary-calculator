@@ -30,6 +30,27 @@ export function fmt(amount, currency) {
   }
 }
 
+// Number only, no currency. The compact widgets put the currency once in the
+// segment label instead of repeating it on every value — repeating "$US" four
+// times across a pill is what made it wide enough to break Clockify's header.
+export function fmtNum(amount) {
+  return new Intl.NumberFormat(undefined, {
+    minimumFractionDigits: 2, maximumFractionDigits: 2,
+  }).format(amount);
+}
+
+// The currency token the active locale prints — "$US" in fr-FR, "$" in en-US —
+// so a label built from it matches the values elsewhere in the UI.
+export function currencyTag(currency) {
+  try {
+    return new Intl.NumberFormat(undefined, { style: 'currency', currency })
+      .formatToParts(0)
+      .find((part) => part.type === 'currency')?.value || currency;
+  } catch {
+    return currency;
+  }
+}
+
 export function fmtPct(n) {
   return n % 1 === 0 ? `${n}%` : `${n.toFixed(1)}%`;
 }

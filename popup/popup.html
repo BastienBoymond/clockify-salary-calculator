@@ -136,6 +136,14 @@
               <select id="paid-currency"></select>
             </div>
           </div>
+          <div class="field">
+            <label for="weekend-bonus">Weekend bonus (extra per hour)</label>
+            <div class="input-wrap">
+              <input type="number" id="weekend-bonus" placeholder="0" min="0" step="0.01" class="has-unit" />
+              <span class="unit" id="weekend-unit">€</span>
+            </div>
+            <span class="hint">Added on top of the base rate for hours tracked on Saturday or Sunday.</span>
+          </div>
         </div>
       </div>
 
@@ -271,18 +279,25 @@
       <div class="card-body" style="padding-bottom:0">
         <div class="sim-hours-row">
           <div class="field">
-            <label for="sim-hours">Hours to simulate</label>
+            <label for="sim-hours">Hours</label>
             <div class="input-wrap">
               <input type="number" id="sim-hours" placeholder="40" min="0" step="0.5" class="has-unit" value="40" />
               <span class="unit">h</span>
             </div>
           </div>
-          <div class="sim-presets">
-            <button type="button" class="sim-preset" data-h="1">1h</button>
-            <button type="button" class="sim-preset" data-h="8">1d</button>
-            <button type="button" class="sim-preset active" data-h="40">1w</button>
-            <button type="button" class="sim-preset" data-h="160">1m</button>
+          <div class="field">
+            <label for="sim-weekend-hours">of which weekend</label>
+            <div class="input-wrap">
+              <input type="number" id="sim-weekend-hours" placeholder="0" min="0" step="0.5" class="has-unit" value="0" />
+              <span class="unit">h</span>
+            </div>
           </div>
+        </div>
+        <div class="sim-presets">
+          <button type="button" class="sim-preset" data-h="1">1h</button>
+          <button type="button" class="sim-preset" data-h="8">1d</button>
+          <button type="button" class="sim-preset active" data-h="40">1w</button>
+          <button type="button" class="sim-preset" data-h="160">1m</button>
         </div>
       </div>
       <div id="sim-body">
@@ -428,6 +443,31 @@
           <input type="text" id="inv-legal-status" placeholder="Sole proprietor" />
         </div>
         <div class="hint">The hourly rate and currency are taken from the Settings tab.</div>
+      </div>
+    </div>
+
+    <!-- Weekend hours -->
+    <div class="card">
+      <div class="card-header">
+        <svg class="icon" viewBox="0 0 24 24"><use href="#ico-clock"/></svg>
+        Weekend hours
+      </div>
+      <div class="card-body">
+        <div class="rate-row">
+          <div class="field">
+            <label for="inv-weekend-hours">Hours tracked on Sat / Sun</label>
+            <div class="input-wrap">
+              <input type="number" id="inv-weekend-hours" placeholder="0" min="0" step="0.25" class="has-unit" />
+              <span class="unit">h</span>
+            </div>
+          </div>
+          <button type="button" id="inv-detect-weekend" class="fetch-btn">
+            <svg class="icon" viewBox="0 0 24 24"><use href="#ico-zap"/></svg>
+            Detect
+          </button>
+        </div>
+        <div id="inv-weekend-status"></div>
+        <span class="hint">Billed as a separate "Weekend surcharge" line at the bonus rate. Always check this number before generating.</span>
       </div>
     </div>
 

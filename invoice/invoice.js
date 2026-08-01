@@ -27,7 +27,9 @@ function updateTotals() {
     const price = parseFr(row.querySelector('.item-price').textContent);
     const amt   = qty * price;
     row.querySelector('.item-amount').textContent = fmtCurrency(amt, invoiceCurrency);
-    totalHours += qty;
+    // Surcharge rows bill hours that the project rows already counted, so their
+    // amount counts toward the money total but their hours must not.
+    if (!row.classList.contains('item-row-extra')) totalHours += qty;
     total += amt;
   });
 
@@ -45,10 +47,10 @@ function updateTotals() {
 
 // ── Row management ────────────────────────────────────────────────────────────
 
-function addRow({ name = '', date = '', hours = 0, price = 0 } = {}) {
+function addRow({ name = '', date = '', hours = 0, price = 0, countHours = true } = {}) {
   const tbody = document.getElementById('items-body');
   const tr    = document.createElement('tr');
-  tr.className = 'item-row';
+  tr.className = 'item-row' + (countHours ? '' : ' item-row-extra');
 
   // Round hours to 2 decimals
   const hoursStr = hours > 0 ? fmtFr(Math.round(hours * 100) / 100) : '0,00';
@@ -173,6 +175,20 @@ async function loadAndRender() {
     });
   } else {
     addRow({ date: dateStr, price: rate });
+  }
+
+  // Weekend surcharge: the EXTRA per hour on top of the base rate, on its own
+  // line so the project rows stay at the plain hourly rate.
+  const weekendHours = local.weekendHours || 0;
+  const weekendBonus = local.weekendBonus ?? sync.weekendBonus ?? 0;
+  if (weekendHours > 0 && weekendBonus > 0) {
+    addRow({
+      name: 'Weekend surcharge (Sat/Sun)',
+      date: dateStr,
+      hours: weekendHours,
+      price: weekendBonus,
+      countHours: false,
+    });
   }
 
   updateTotals();

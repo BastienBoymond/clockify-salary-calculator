@@ -135,8 +135,14 @@
 }
 
 /* ── Footer ────────────────────────────────────────────────────────────────── */
+/* A column, so the weekend line sits on its own row by design rather than
+   wrapping mid-phrase. The card has overflow:hidden, and a long amount on one
+   line would otherwise be clipped without a trace. */
 #csc-earnings-card .csc-footer {
+  display: flex;
+  flex-direction: column;
   font-size: 10px;
+  line-height: 1.45;
   color: var(--ui-input-placeholder, #cbd5e1);
   border-top: 1px solid var(--ui-elevation-system-types-default-border-color, #f8fafc);
   padding-top: 6px;
@@ -151,11 +157,13 @@
 .csc-week-pill {
   display: inline-flex;
   align-items: center;
-  gap: 13px;
-  height: 40px;
+  /* Deliberately tight: this pill is injected inline into Clockify's own
+     toolbar, and any extra width pushes the date picker onto a second row. */
+  gap: 8px;
+  height: 34px;
   box-sizing: border-box;
-  margin-left: 12px;
-  padding: 0 14px;
+  margin-left: 10px;
+  padding: 0 10px;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   background: var(--ui-elevation-system-types-default-background, #ffffff);
   color: var(--ui-global-text-color, #1e293b);
@@ -170,7 +178,7 @@
 }
 
 .csc-week-pill .csc-week-icon {
-  width: 15px; height: 15px;
+  width: 13px; height: 13px;
   stroke: #16a34a;
   stroke-width: 2.5;
   flex-shrink: 0;
@@ -192,25 +200,31 @@
 }
 
 .csc-week-pill .csc-week-hours {
-  font-size: 15px;
+  font-size: 13px;
   font-weight: 700;
   color: var(--ui-global-text-color, #1e293b);
 }
 
 .csc-week-pill .csc-week-net {
-  font-size: 15px;
+  font-size: 13.5px;
   font-weight: 800;
   color: #16a34a;
 }
 
+.csc-week-pill .csc-week-we {
+  font-size: 12px;
+  font-weight: 700;
+  color: #a78bfa;
+}
+
 .csc-week-pill .csc-week-gross {
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--ui-input-placeholder, #94a3b8);
 }
 
 .csc-week-pill .csc-week-conv {
-  font-size: 14px;
+  font-size: 12.5px;
   font-weight: 700;
   color: #0288d1;
 }
@@ -218,8 +232,17 @@
 .csc-week-pill .csc-week-div {
   width: 1px;
   align-self: stretch;
-  margin: 7px 0;
+  margin: 6px 0;
   background: var(--ui-elevation-system-types-default-border-color, #e2e8f0);
+}
+
+/* ── Dashboard card weekend annotations ────────────────────────────────────── */
+#csc-earnings-card .csc-weekend { color: #a78bfa; font-weight: 600; }
+
+#csc-earnings-card .csc-weekend-unknown {
+  display: block;
+  color: #f59e0b;
+  font-weight: 600;
 }
 
 /* ── Tracker per-day earnings badge ───────────────────────────────────────────
@@ -246,6 +269,18 @@
   stroke: #16a34a;
   stroke-width: 2.5;
   flex-shrink: 0;
+  align-self: center;
+}
+
+/* Weekend marker: this day earned the extra per-hour bonus. */
+.csc-day-badge .csc-day-we {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: #7c3aed;
+  background: rgba(124, 58, 237, 0.14);
+  border-radius: 4px;
+  padding: 1px 4px;
   align-self: center;
 }
 

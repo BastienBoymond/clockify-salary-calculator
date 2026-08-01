@@ -17,6 +17,7 @@ A Chrome extension that displays your real net take-home earnings directly on th
 - **Weekly recap widget** on the calendar page — total hours plus net/gross earnings for the displayed week, next to the Week/Day buttons
 - **Time tracker earnings** — a per-day net/gross badge next to each day group's total, plus a recap pill next to the "Week total" for the whole visible range
 - **Per-location widget toggles** in the Settings tab — independently switch each widget (dashboard card, calendar recap, tracker daily, tracker weekly) on or off; changes apply live
+- **Weekend bonus** — an extra hourly amount for Saturdays and Sundays, reflected in the tracker and calendar widgets and billed as its own "Weekend surcharge" line on the generated invoice
 - **Net salary calculation** with configurable social charges, professional expense deductions, and income tax
 - **Multi-currency support** with live exchange rates (via [open.er-api.com](https://open.er-api.com))
 - **Earnings simulator** in the popup with presets (1h, 1d, 1w, 1m)
@@ -27,11 +28,28 @@ A Chrome extension that displays your real net take-home earnings directly on th
 The extension reads your total tracked hours from the Clockify dashboard and applies your configured settings to compute net income using this formula:
 
 ```
-Gross       = hours × hourly rate
+Gross        = hours × hourly rate + weekend hours × weekend bonus
 After social = Gross − (Gross × social charges %)
-Taxable     = After social − (After social × professional expense %)
-Net         = Taxable − (Taxable × income tax rate %)
+Taxable      = After social − (After social × professional expense %)
+Net          = Taxable − (Taxable × income tax rate %)
 ```
+
+The weekend bonus is an **extra** amount per hour on top of the base rate, applied to hours
+tracked on a Saturday or Sunday. Splitting weekday from weekend hours needs a day-by-day
+breakdown, which comes from two places depending on the page:
+
+- **Calendar and Time Tracker** read it straight from the DOM, which already groups by day. The
+  tracker scrape proves its own completeness by comparing the sum of the visible day groups
+  against the range totals Clockify prints; if they disagree (entries still lazy-loading) it
+  reports "unknown" rather than a number that would under-bill.
+- **Dashboard and invoice** use the Clockify API. The dashboard's daily activity chart is a
+  `<canvas>`, so nothing is readable from the page there. The extension reuses the session the
+  web app already holds in its own `localStorage` — no API key to paste — and cross-checks the
+  total it computes against the one the page displays before showing anything.
+
+Entries are bucketed into days using the **user's timezone**, not UTC: an entry starting
+`2026-07-31T22:00:00Z` is Saturday 1 August in Europe/Paris, and reading it as UTC would
+silently drop the bonus.
 
 ## Installation
 
@@ -52,7 +70,7 @@ No build step or dependencies required — pure vanilla JavaScript.
 ## Configuration
 
 1. Click the extension icon to open the settings popup
-2. Set your **hourly rate** and the currency you are paid in
+2. Set your **hourly rate** and the currency you are paid in, plus an optional **weekend bonus** (extra per hour on Saturdays and Sundays)
 3. Configure your deductions:
    - **Social charges** (e.g. cotisations sociales)
    - **Professional expense deduction** (e.g. 34% micro-BNC abattement)

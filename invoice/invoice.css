@@ -190,6 +190,9 @@ body {
 
 .td-amount  { font-weight: 600; }
 
+/* Surcharge line: bills an extra rate on hours already listed above. */
+.item-row-extra .item-desc { font-style: italic; }
+
 .td-actions { text-align: center; padding: 4px !important; }
 
 .remove-btn {

@@ -9,7 +9,7 @@ import { CURRENCIES, CURRENCY_SYMBOLS } from '../shared/currencies.js';
 import { SETTINGS_KEYS } from '../shared/settings.js';
 import { INVOICE_KEYS } from '../shared/invoice-fields.js';
 import { initSimulator, renderSimulation } from './simulator.js';
-import { initInvoiceTab, fillInvoiceFields } from './invoice-tab.js';
+import { initInvoiceTab, fillInvoiceFields, onInvoiceTabShown } from './invoice-tab.js';
 
 // ── DOM refs ──────────────────────────────────────────────────────────────────
 
@@ -17,6 +17,8 @@ const paidCurrencyEl        = document.getElementById('paid-currency');
 const paidCurrencyDisplayEl = document.getElementById('paid-currency-display');
 const receiveCurrencyEl     = document.getElementById('receive-currency');
 const hourlyRateEl          = document.getElementById('hourly-rate');
+const weekendBonusEl        = document.getElementById('weekend-bonus');
+const weekendUnitEl         = document.getElementById('weekend-unit');
 const socialChargesEl       = document.getElementById('social-charges');
 const profExpenseEl         = document.getElementById('prof-expense');
 const taxRateEl             = document.getElementById('tax-rate');
@@ -43,6 +45,7 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
     const tab = btn.dataset.tab;
     document.getElementById('panel-settings').style.display = tab === 'settings' ? '' : 'none';
     document.getElementById('panel-invoice').style.display  = tab === 'invoice'  ? '' : 'none';
+    if (tab === 'invoice') onInvoiceTabShown();
   });
 });
 
@@ -71,9 +74,11 @@ async function init() {
   populateSelect(paidCurrencyDisplayEl, paid);
   populateSelect(receiveCurrencyEl, receive);
 
-  rateUnit.textContent = CURRENCY_SYMBOLS[paid] || paid;
+  rateUnit.textContent       = CURRENCY_SYMBOLS[paid] || paid;
+  weekendUnitEl.textContent  = CURRENCY_SYMBOLS[paid] || paid;
 
   if (data.hourlyRate    != null) hourlyRateEl.value    = data.hourlyRate;
+  if (data.weekendBonus  != null) weekendBonusEl.value  = data.weekendBonus;
   if (data.socialCharges != null) socialChargesEl.value = data.socialCharges;
   if (data.profExpense   != null) profExpenseEl.value   = data.profExpense;
   if (data.taxRate       != null) taxRateEl.value       = data.taxRate;
@@ -93,7 +98,8 @@ async function init() {
 paidCurrencyEl.addEventListener('change', () => {
   const c = paidCurrencyEl.value;
   populateSelect(paidCurrencyDisplayEl, c);
-  rateUnit.textContent = CURRENCY_SYMBOLS[c] || c;
+  rateUnit.textContent      = CURRENCY_SYMBOLS[c] || c;
+  weekendUnitEl.textContent = CURRENCY_SYMBOLS[c] || c;
 });
 
 // ── Fetch live exchange rate ──────────────────────────────────────────────────
@@ -152,6 +158,7 @@ form.addEventListener('submit', async (e) => {
 
   await chrome.storage.sync.set({
     hourlyRate:      parseFloat(hourlyRateEl.value)    || 0,
+    weekendBonus:    parseFloat(weekendBonusEl.value)  || 0,
     paidCurrency:    paidCurrencyEl.value,
     receiveCurrency: receiveCurrencyEl.value,
     socialCharges:   parseFloat(socialChargesEl.value) || 0,
