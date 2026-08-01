@@ -7,6 +7,7 @@ import { fmt, fmtPct } from '../shared/format.js';
 // ── DOM refs ──────────────────────────────────────────────────────────────────
 
 const hourlyRateEl      = document.getElementById('hourly-rate');
+const weekendBonusEl    = document.getElementById('weekend-bonus');
 const socialChargesEl   = document.getElementById('social-charges');
 const profExpenseEl     = document.getElementById('prof-expense');
 const taxRateEl         = document.getElementById('tax-rate');
@@ -14,11 +15,13 @@ const exchangeRateEl    = document.getElementById('exchange-rate');
 const paidCurrencyEl    = document.getElementById('paid-currency');
 const receiveCurrencyEl = document.getElementById('receive-currency');
 const simHoursEl        = document.getElementById('sim-hours');
+const simWeekendEl      = document.getElementById('sim-weekend-hours');
 const simBody           = document.getElementById('sim-body');
 
 function readForm() {
   return {
     hourlyRate:    parseFloat(hourlyRateEl.value)    || 0,
+    weekendBonus:  parseFloat(weekendBonusEl.value)  || 0,
     socialCharges: parseFloat(socialChargesEl.value) || 0,
     profExpense:   parseFloat(profExpenseEl.value)   || 0,
     taxRate:       parseFloat(taxRateEl.value)       || 0,
@@ -35,11 +38,12 @@ export function renderSimulation() {
     return;
   }
 
-  const hours   = parseFloat(simHoursEl.value) || 0;
+  const hours   = parseFloat(simHoursEl.value)   || 0;
+  const weekend = parseFloat(simWeekendEl.value) || 0;
   const paid    = paidCurrencyEl.value;
   const receive = receiveCurrencyEl.value;
   const same    = paid === receive;
-  const c       = calculate(hours, s);
+  const c       = calculate(hours, s, { weekendHours: weekend });
   const netPct  = c.gross > 0 ? (c.net / c.gross) * 100 : 0;
 
   let html = '<div style="padding:10px 14px 12px">';
@@ -49,6 +53,14 @@ export function renderSimulation() {
       <span class="sim-lbl">Gross <span class="badge">${hours} h</span></span>
       <span class="sim-val">${fmt(c.gross, paid)}</span>
     </div>`;
+
+  if (c.weekendAmt > 0) {
+    html += `
+      <div class="sim-row">
+        <span class="sim-lbl">…incl. weekend bonus <span class="badge">${c.weekendHours} h</span></span>
+        <span class="sim-val">+${fmt(c.weekendAmt, paid)}</span>
+      </div>`;
+  }
 
   html += '<div class="sim-deductions">';
 
@@ -113,8 +125,8 @@ export function renderSimulation() {
 
 export function initSimulator() {
   // Any relevant form input re-renders the simulation.
-  [hourlyRateEl, socialChargesEl, profExpenseEl, taxRateEl, exchangeRateEl,
-   paidCurrencyEl, receiveCurrencyEl, simHoursEl].forEach(el => {
+  [hourlyRateEl, weekendBonusEl, socialChargesEl, profExpenseEl, taxRateEl, exchangeRateEl,
+   paidCurrencyEl, receiveCurrencyEl, simHoursEl, simWeekendEl].forEach(el => {
     el.addEventListener('input',  renderSimulation);
     el.addEventListener('change', renderSimulation);
   });

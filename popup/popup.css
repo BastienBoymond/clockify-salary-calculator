@@ -309,30 +309,33 @@ select {
 .fetch-btn:hover  { background: var(--blue-light); }
 .fetch-btn.loading { opacity: 0.55; pointer-events: none; }
 
-#rate-status {
+#rate-status,
+#inv-weekend-status {
   font-size: 10px; color: var(--muted);
   min-height: 14px;
 }
-#rate-status.ok    { color: var(--green); }
-#rate-status.error { color: var(--red); }
+#rate-status.ok,    #inv-weekend-status.ok    { color: var(--green); }
+#rate-status.error, #inv-weekend-status.error { color: var(--red); }
 
 /* ── Simulation ───────────────────────────────────────── */
 #sim-card { margin-bottom: 0; }
 
 .sim-hours-row {
   display: flex;
-  gap: 6px;
-  align-items: center;
+  gap: 8px;
+  align-items: flex-end;
 }
-.sim-hours-row .field { flex: 1; }
+/* Both inputs share the row evenly; the presets get their own row below, so
+   neither the labels nor the number fields get squeezed. */
+.sim-hours-row .field { flex: 1 1 0; min-width: 0; }
 
 .sim-presets {
   display: flex;
   gap: 4px;
-  align-self: flex-end;
-  padding-bottom: 1px;
+  margin-top: 8px;
 }
 .sim-preset {
+  flex: 1;
   padding: 7px 9px;
   border: 1.5px solid var(--border);
   border-radius: 6px;

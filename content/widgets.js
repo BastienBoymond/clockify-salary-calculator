@@ -2,7 +2,7 @@
 // storage; everything comes in as arguments. Styling lives in content.css.
 
 import { calculate } from '../shared/money.js';
-import { fmt, formatHM } from '../shared/format.js';
+import { fmt, fmtNum, currencyTag, formatHM } from '../shared/format.js';
 
 export const CARD_ID            = 'csc-earnings-card';
 export const WEEK_ID            = 'csc-week-widget';
@@ -18,11 +18,17 @@ function coinSvg(cls) {
 }
 
 // Dashboard earnings card: net/gross, net% badge, progress bar, FX conversion.
-export function buildCard(settings, hours) {
-  const { paidCurrency, receiveCurrency, exchangeRate, hourlyRate } = settings;
-  const { gross, net } = calculate(hours, settings);
+//
+// weekendKnown is false on the dashboard today: its daily activity chart is a
+// <canvas>, so there is no way to tell which of these hours fell on a weekend.
+// Rather than quietly bill them all at the base rate, the card says so.
+export function buildCard(settings, hours, { weekendHours = 0, weekendKnown = true } = {}) {
+  const { paidCurrency, receiveCurrency, exchangeRate, hourlyRate, weekendBonus } = settings;
+  const calc = calculate(hours, settings, { weekendHours });
+  const { gross, net, weekendAmt } = calc;
   const same    = paidCurrency === receiveCurrency;
   const netPct  = gross > 0 ? Math.round((net / gross) * 100) : 0;
+  const hasBonus = weekendBonus > 0;
 
   const card = document.createElement('div');
   card.id = CARD_ID;
@@ -58,7 +64,15 @@ export function buildCard(settings, hours) {
     </div>
     ` : ''}
 
-    <div class="csc-footer">${hours.toFixed(2)} h &times; ${fmt(hourlyRate, paidCurrency)}/h</div>
+    <div class="csc-footer">
+      <span>${hours.toFixed(2)} h &times; ${fmt(hourlyRate, paidCurrency)}/h</span>
+      ${hasBonus && calc.weekendHours > 0
+        ? `<span class="csc-weekend">+${calc.weekendHours.toFixed(2)} h weekend = ${fmt(weekendAmt, paidCurrency)}</span>`
+        : ''}
+      ${hasBonus && !weekendKnown
+        ? '<span class="csc-weekend-unknown" title="The dashboard chart is a canvas, so weekend hours cannot be read here. Open the Time Tracker or Calendar for the weekend-adjusted figure.">weekend bonus not included</span>'
+        : ''}
+    </div>
   `;
 
   return card;
@@ -67,16 +81,26 @@ export function buildCard(settings, hours) {
 // Inline pill: hours + net/gross (+ FX). Used as the calendar week recap and,
 // with a class override, as the tracker range total.
 export function buildWeekWidget(settings, totals, { id = WEEK_ID, cls, label } = {}) {
-  const { paidCurrency, receiveCurrency, exchangeRate, hourlyRate } = settings;
-  const { hours, days } = totals;
+  const { paidCurrency, receiveCurrency, exchangeRate, hourlyRate, weekendBonus } = settings;
+  // weekendHours rides along on `totals` so call sites that only know a plain
+  // total (the tracker range pills) keep working unchanged.
+  const { hours, days, weekendHours = 0 } = totals;
   const hasRate = hourlyRate > 0;
-  const { gross, net } = calculate(hours, settings);
+  const calc = calculate(hours, settings, { weekendHours });
+  const { gross, net, weekendAmt } = calc;
   const same  = paidCurrency === receiveCurrency;
   label = label || (days > 1 ? 'This week' : 'This day');
 
   const widget = document.createElement('div');
   if (id) widget.id = id;
   widget.className = 'csc-week-pill' + (cls ? ' ' + cls : '');
+
+  // Sits inline in Clockify's own toolbar, so width is the binding constraint:
+  // too wide and it pushes the date picker onto a second row. The currency is
+  // therefore stated once per label rather than repeated on every value, and
+  // paid-currency figures are grouped before the converted one.
+  const paidTag    = currencyTag(paidCurrency);
+  const receiveTag = currencyTag(receiveCurrency);
 
   widget.innerHTML = `
     ${coinSvg('csc-week-icon')}
@@ -89,21 +113,28 @@ export function buildWeekWidget(settings, totals, { id = WEEK_ID, cls, label } =
     ${hasRate ? `
     <div class="csc-week-div"></div>
     <div class="csc-week-seg">
-      <span class="csc-week-lbl">Net</span>
-      <span class="csc-week-net">${fmt(net, paidCurrency)}</span>
+      <span class="csc-week-lbl">Net ${paidTag}</span>
+      <span class="csc-week-net">${fmtNum(net)}</span>
     </div>
 
     <div class="csc-week-div"></div>
     <div class="csc-week-seg">
       <span class="csc-week-lbl">Gross</span>
-      <span class="csc-week-gross">${fmt(gross, paidCurrency)}</span>
+      <span class="csc-week-gross">${fmtNum(gross)}</span>
     </div>
+
+    ${weekendBonus > 0 && calc.weekendHours > 0 ? `
+    <div class="csc-week-div"></div>
+    <div class="csc-week-seg">
+      <span class="csc-week-lbl">Weekend</span>
+      <span class="csc-week-we">+${fmtNum(weekendAmt)}</span>
+    </div>` : ''}
 
     ${!same ? `
     <div class="csc-week-div"></div>
     <div class="csc-week-seg">
-      <span class="csc-week-lbl">Net ${receiveCurrency}</span>
-      <span class="csc-week-conv">${fmt(net * exchangeRate, receiveCurrency)}</span>
+      <span class="csc-week-lbl">Net ${receiveTag}</span>
+      <span class="csc-week-conv">${fmtNum(net * exchangeRate)}</span>
     </div>` : ''}
     ` : ''}
   `;
@@ -111,10 +142,12 @@ export function buildWeekWidget(settings, totals, { id = WEEK_ID, cls, label } =
   return widget;
 }
 
-// Compact inline earnings badge appended next to a day's total duration.
-export function buildDayBadge(settings, hours) {
-  const { paidCurrency, receiveCurrency, exchangeRate } = settings;
-  const { gross, net } = calculate(hours, settings);
+// Compact inline earnings badge appended next to a day's total duration. A day
+// is either fully a weekend day or not, so weekendHours is 0 or the day total.
+export function buildDayBadge(settings, hours, { weekendHours = 0 } = {}) {
+  const { paidCurrency, receiveCurrency, exchangeRate, weekendBonus } = settings;
+  const calc = calculate(hours, settings, { weekendHours });
+  const { gross, net } = calc;
   const same       = paidCurrency === receiveCurrency;
   const showGross  = Math.abs(gross - net) >= 0.005;
 
@@ -123,6 +156,7 @@ export function buildDayBadge(settings, hours) {
 
   badge.innerHTML = `
     ${coinSvg('csc-day-icon')}
+    ${weekendBonus > 0 && calc.weekendHours > 0 ? '<span class="csc-day-we">WE</span>' : ''}
     <span class="csc-day-net">${fmt(net, paidCurrency)}</span>
     ${showGross ? `<span class="csc-day-gross">of ${fmt(gross, paidCurrency)}</span>` : ''}
     ${!same ? `<span class="csc-day-conv">${fmt(net * exchangeRate, receiveCurrency)}</span>` : ''}

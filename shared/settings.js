@@ -1,6 +1,6 @@
 // Earnings settings persisted in chrome.storage.sync.
 export const SETTINGS_KEYS = [
-  'hourlyRate', 'paidCurrency', 'receiveCurrency', 'socialCharges', 'profExpense', 'taxRate', 'exchangeRate',
+  'hourlyRate', 'weekendBonus', 'paidCurrency', 'receiveCurrency', 'socialCharges', 'profExpense', 'taxRate', 'exchangeRate',
   'showDashboard', 'showCalendar', 'showTrackerDay', 'showTrackerWeek',
 ];
 
@@ -9,6 +9,7 @@ export const SETTINGS_KEYS = [
 export function normalizeSettings(data) {
   return {
     hourlyRate:      data.hourlyRate      || 0,
+    weekendBonus:    data.weekendBonus    || 0,
     paidCurrency:    data.paidCurrency    || 'EUR',
     receiveCurrency: data.receiveCurrency || 'EUR',
     socialCharges:   data.socialCharges   || 0,
