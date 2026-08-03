@@ -7,6 +7,7 @@ import { loadSettings, SETTINGS_KEYS } from '../shared/settings.js';
 import { isWeekendDay } from '../shared/weekday.js';
 import { summarizeEntries } from '../shared/time-entries.js';
 import { getSession, fetchTimeEntries } from './clockify-api.js';
+import { createWeekendLookup } from './weekend-lookup.js';
 import {
   isDashboard, isCalendar, isTracker,
   getDashboardTotalEl, getDashboardAnchor, getDashboardRange,
@@ -100,50 +101,30 @@ function trackerFullyInjected() {
 
 // ── Dashboard weekend split (Clockify API) ────────────────────────────────────
 // The dashboard's daily chart is a canvas, so the only exact source of per-day
-// hours is the API. Results are cached per displayed range, and cross-checked
-// against the total the page itself prints: if the two disagree we parsed the
-// wrong window, and the number is dropped rather than shown. A failed lookup is
-// cached too, so a broken session can't turn every DOM mutation into a fetch.
+// hours is the API. Deciding when to ask, what to cache and when to retry lives
+// in weekend-lookup.js; all that belongs here is the fetch and the re-render.
 
-let weekendCache   = null;   // { key, totalHours, weekendHours } — nulls = failed
-let weekendPending = '';
-
-async function loadDashboardWeekend(range) {
-  weekendPending = range.key;
-  try {
+const weekendLookup = createWeekendLookup({
+  fetchSummary: async ({ startISO, endISO }) => {
     const session = getSession();
+    // Empty for a few hundred ms while Clockify refreshes its token mid-route
+    // change — a transient the lookup retries, not a permanent answer.
     if (!session) throw new Error('no Clockify session');
 
-    const entries = await fetchTimeEntries(session, range.startISO, range.endISO);
+    const entries = await fetchTimeEntries(session, startISO, endISO);
     const { totalHours, weekendHours } = summarizeEntries(entries, session.timeZone);
-    weekendCache = { key: range.key, totalHours, weekendHours };
+    return { totalHours, weekendHours };
+  },
+  onChange: () => { resetKeys(); evaluateAndInject(); },
+});
 
-    resetKeys();
-    evaluateAndInject();
-  } catch {
-    weekendCache = { key: range.key, totalHours: null, weekendHours: null };
-  } finally {
-    weekendPending = '';
-  }
-}
-
-// Weekend hours for the range on screen, or null while unknown. Kicks off the
-// fetch on a cache miss; the card re-renders when it lands.
+// Weekend hours for the range on screen, or null while unknown. Cheap enough to
+// call on every mutation; the lookup decides whether that costs a request.
 function dashboardWeekendHours(pageHours) {
   if (!(settings.weekendBonus > 0)) return 0;   // nothing to split out
 
   const range = getDashboardRange();
-  if (!range) return null;
-
-  if (weekendCache?.key === range.key) {
-    if (weekendCache.weekendHours == null) return null;   // known failure
-    return Math.abs(weekendCache.totalHours - pageHours) < 1 / 60
-      ? weekendCache.weekendHours
-      : null;
-  }
-
-  if (weekendPending !== range.key) loadDashboardWeekend(range);
-  return null;
+  return range ? weekendLookup.get(range, pageHours) : null;
 }
 
 // ── Injection orchestration ───────────────────────────────────────────────────
@@ -169,11 +150,12 @@ function evaluateAndInject() {
   if (isDashboard()) {
     const totalEl = getDashboardTotalEl();
     if (!totalEl) return;
+    const want = settings.showDashboard && settings.hourlyRate > 0;
     // The weekend split is part of the key: moving an entry from Saturday to
-    // Monday leaves the page total identical but must still re-render.
-    const weekend = dashboardWeekendHours(parseTime(totalEl.textContent));
+    // Monday leaves the page total identical but must still re-render. Asked for
+    // only when there is a card to put it on, so a hidden widget costs no fetch.
+    const weekend = want ? dashboardWeekendHours(parseTime(totalEl.textContent)) : 0;
     const key     = totalEl.textContent.trim() + '#' + (weekend ?? 'x');
-    const want    = settings.showDashboard && settings.hourlyRate > 0;
     const present = !!document.getElementById(CARD_ID);
     const full    = want ? present : !present;
     if (key === lastTimeText && full) return;
@@ -200,32 +182,45 @@ function evaluateAndInject() {
 }
 
 // ── SPA navigation detection ──────────────────────────────────────────────────
+// Angular navigates by calling history.pushState in the PAGE's JavaScript world.
+// A content script runs in an isolated world, so patching history.pushState here
+// would never see those calls — the pathname itself is the only signal we can
+// trust. Query-string changes are deliberately not navigation: the date picker
+// writes the displayed range into the URL, and the range key already covers that.
+
+let lastPath = location.pathname;
 
 function onNavigate() {
+  lastPath = location.pathname;   // the one place the path is committed
   if (!isDashboard()) document.getElementById(CARD_ID)?.remove();
   if (!isCalendar())  document.getElementById(WEEK_ID)?.remove();
   if (!isTracker())   removeTrackerWidgets();
+  // Arriving on a page is the retry: the weekend lookup used to remember a
+  // failed fetch until the tab was reloaded.
+  weekendLookup.invalidate();
   resetKeys();
   evaluateAndInject();
 }
 
-['pushState', 'replaceState'].forEach((method) => {
-  const original = history[method];
-  history[method] = function (...args) {
-    const result = original.apply(this, args);
-    window.dispatchEvent(new Event('locationchange'));
-    return result;
-  };
-});
+// True when this call handled a route change, so the caller can stand down.
+// Everything routes through here rather than calling onNavigate directly: a
+// same-path history entry must not tear anything down. Clockify pushes one per
+// date-range change, so Back over them would otherwise discard a proven answer
+// and re-fetch on every press.
+function checkNavigation() {
+  if (location.pathname === lastPath) return false;
+  onNavigate();
+  return true;
+}
 
-window.addEventListener('popstate', onNavigate);
-window.addEventListener('locationchange', onNavigate);
+window.addEventListener('popstate', checkNavigation);   // fires in both worlds
 
 // ── MutationObserver ──────────────────────────────────────────────────────────
 
 let scheduled = false;
 
 const observer = new MutationObserver(() => {
+  if (checkNavigation()) return;   // onNavigate() has already re-evaluated
   if (!isDashboard() && !isCalendar() && !isTracker()) return;
   if (scheduled) return;
   scheduled = true;
@@ -237,15 +232,51 @@ const observer = new MutationObserver(() => {
 
 observer.observe(document.body, { childList: true, subtree: true, characterData: true });
 
+// Backstop for a pathname change whose DOM mutations were already delivered — an
+// Angular replaceState canonicalisation, or a route whose markup was rendered
+// before the URL moved. The observer would see no further mutation to react to.
+// (It is NOT a background-tab backstop: Chrome clamps a hidden tab's intervals to
+// ≥1s and eventually ~1/min. It doesn't need to be — parked requestAnimationFrame
+// callbacks are retained and run on the first frame after the tab is visible.)
+//
+// Also where an orphaned content script notices it is orphaned: after the
+// extension reloads or updates, this world keeps running with chrome.runtime
+// severed, so `settings` can never refresh again — and silently re-injecting a
+// card built from stale rates is worse than injecting nothing.
+const navigationPoll = setInterval(() => {
+  if (!chrome.runtime?.id) {
+    clearInterval(navigationPoll);
+    observer.disconnect();
+    return;
+  }
+  checkNavigation();
+}, 500);
+
 // ── Settings changes ──────────────────────────────────────────────────────────
 // Re-render whenever an earnings setting changes — a popup save, a live widget
 // toggle, or a sync from another device. Invoice keys etc. are filtered out.
 
 async function refreshAndReinject() {
   settings = await loadSettings();
+  // retryFailures, not invalidate: none of these settings can move an hour from
+  // Saturday to Monday, so a proven answer stays proven. Discarding it here would
+  // flash "weekend bonus not included" onto the card and re-download the range on
+  // every unrelated toggle — in every open tab, since sync fans out.
+  weekendLookup.retryFailures();
   resetKeys();
   evaluateAndInject();
 }
+
+// A tab can burn its whole retry budget while hidden — a settings sync from
+// another device is enough to start one — and coming back to it changes neither
+// the pathname nor the DOM, so nothing else here would ever re-attempt. Looking
+// at the tab again is the gesture; proven answers are kept.
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) return;
+  weekendLookup.retryFailures();
+  resetKeys();
+  evaluateAndInject();
+});
 
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area !== 'sync') return;
