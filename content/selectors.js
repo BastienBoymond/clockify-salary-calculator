@@ -2,6 +2,7 @@
 // file, so a Clockify UI change is a one-file fix.
 
 import { parseTime } from '../shared/format.js';
+import { dateRangeBounds, resolveTimeZone } from '../shared/date-range.js';
 import { weekdayFromLabel, isWeekendLabel, summarizeWeekend } from '../shared/weekday.js';
 
 // "HH:MM:SS" — how Clockify renders day and week totals.
@@ -28,27 +29,30 @@ export function getDashboardAnchor(totalEl) {
   return totalEl.closest('.cl-dashboard-card-header-item');
 }
 
-// The range the dashboard is currently showing, as { key, startISO, endISO }.
+// Cache the conversion because this scraper is called on every DOM mutation.
+let lastDashboardRange = null;
+
+// The range on screen, as { key, label, startISO, endISO, timeZone }.
 // The picker itself may read "This month", but a print-only sibling always
 // carries the resolved dates ("Aug 1, 2026 - Aug 31, 2026"). Returns null if
 // the dates cannot be parsed — the caller then shows no weekend split rather
 // than querying the wrong window.
-export function getDashboardRange() {
+export function getDashboardRange(timeZone) {
   const el = [...document.querySelectorAll('datepicker-range .cl-d-print-block')]
     .find((e) => e.textContent.includes('-'));
   if (!el) return null;
 
-  const key   = el.textContent.replace(/\s+/g, ' ').trim();
-  const parts = key.split(/\s+-\s+/);
+  const label = el.textContent.replace(/\s+/g, ' ').trim();
+  timeZone = resolveTimeZone(timeZone);
+  const key = `${label}#${timeZone}`;
+  if (lastDashboardRange?.key === key) return lastDashboardRange;
+
+  const parts = label.split(/\s+-\s+/);
   if (parts.length !== 2) return null;
 
-  // Parsed as local dates, matching how Clockify presents the range.
-  const from = new Date(parts[0]);
-  const to   = new Date(parts[1]);
-  if (Number.isNaN(from.getTime()) || Number.isNaN(to.getTime())) return null;
-  to.setHours(23, 59, 59, 999);
-
-  return { key, startISO: from.toISOString(), endISO: to.toISOString() };
+  const bounds = dateRangeBounds(parts[0], parts[1], timeZone);
+  if (!bounds) return null;
+  return lastDashboardRange = { key, label, ...bounds };
 }
 
 // ── Calendar ──────────────────────────────────────────────────────────────────
