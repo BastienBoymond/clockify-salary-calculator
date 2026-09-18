@@ -105,14 +105,14 @@ function trackerFullyInjected() {
 // in weekend-lookup.js; all that belongs here is the fetch and the re-render.
 
 const weekendLookup = createWeekendLookup({
-  fetchSummary: async ({ startISO, endISO }) => {
+  fetchSummary: async ({ startISO, endISO, timeZone }) => {
     const session = getSession();
     // Empty for a few hundred ms while Clockify refreshes its token mid-route
     // change — a transient the lookup retries, not a permanent answer.
     if (!session) throw new Error('no Clockify session');
 
     const entries = await fetchTimeEntries(session, startISO, endISO);
-    const { totalHours, weekendHours } = summarizeEntries(entries, session.timeZone);
+    const { totalHours, weekendHours } = summarizeEntries(entries, timeZone);
     return { totalHours, weekendHours };
   },
   onChange: () => { resetKeys(); evaluateAndInject(); },
@@ -123,7 +123,7 @@ const weekendLookup = createWeekendLookup({
 function dashboardWeekendHours(pageHours) {
   if (!(settings.weekendBonus > 0)) return 0;   // nothing to split out
 
-  const range = getDashboardRange();
+  const range = getDashboardRange(getSession()?.timeZone);
   return range ? weekendLookup.get(range, pageHours) : null;
 }
 
@@ -309,16 +309,16 @@ async function buildInvoiceData() {
   if (isDashboard()) {
     const totalEl   = getDashboardTotalEl();
     const pageHours = totalEl ? parseTime(totalEl.textContent) : null;
-    const range     = getDashboardRange();
     const session   = getSession();
+    const range     = getDashboardRange(session?.timeZone);
 
     if (range && session) {
       try {
         const entries = await fetchTimeEntries(session, range.startISO, range.endISO);
-        const summary = summarizeEntries(entries, session.timeZone);
+        const summary = summarizeEntries(entries, range.timeZone);
         const agrees  = pageHours == null || Math.abs(summary.totalHours - pageHours) < 1 / 60;
         return {
-          page: 'dashboard', source: 'api', projects, range: range.key,
+          page: 'dashboard', source: 'api', projects, range: range.label,
           weekendHours: agrees ? summary.weekendHours : null,
           dayCount:     summary.days.length,
         };

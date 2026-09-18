@@ -47,7 +47,12 @@ breakdown, which comes from two places depending on the page:
   web app already holds in its own `localStorage` — no API key to paste — and cross-checks the
   total it computes against the one the page displays before showing anything.
 
-Entries are bucketed into days using the **user's timezone**, not UTC: an entry starting
+Dashboard and invoice date ranges use the **Clockify account's timezone**, including
+daylight-saving changes. Travelling with a computer set to a different timezone therefore
+does not shift the requested dates. If Clockify supplies no valid timezone, both the range
+and weekend calculation use the browser's timezone.
+
+Entries are bucketed into days using that same timezone, not UTC: an entry starting
 `2026-07-31T22:00:00Z` is Saturday 1 August in Europe/Paris, and reading it as UTC would
 silently drop the bonus.
 
