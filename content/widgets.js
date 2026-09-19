@@ -19,9 +19,8 @@ function coinSvg(cls) {
 
 // Dashboard earnings card: net/gross, net% badge, progress bar, FX conversion.
 //
-// weekendKnown is false on the dashboard today: its daily activity chart is a
-// <canvas>, so there is no way to tell which of these hours fell on a weekend.
-// Rather than quietly bill them all at the base rate, the card says so.
+// weekendKnown is false while the API split is unavailable or its total cannot
+// be verified against the page. Make the missing bonus explicit in that case.
 export function buildCard(settings, hours, { weekendHours = 0, weekendKnown = true } = {}) {
   const { paidCurrency, receiveCurrency, exchangeRate, hourlyRate, weekendBonus } = settings;
   const calc = calculate(hours, settings, { weekendHours });
@@ -70,7 +69,7 @@ export function buildCard(settings, hours, { weekendHours = 0, weekendKnown = tr
         ? `<span class="csc-weekend">+${calc.weekendHours.toFixed(2)} h weekend = ${fmt(weekendAmt, paidCurrency)}</span>`
         : ''}
       ${hasBonus && !weekendKnown
-        ? '<span class="csc-weekend-unknown" title="The dashboard chart is a canvas, so weekend hours cannot be read here. Open the Time Tracker or Calendar for the weekend-adjusted figure.">weekend bonus not included</span>'
+        ? '<span class="csc-weekend-unknown" title="Weekend hours could not be verified for this period. Open the Time Tracker or Calendar to check the weekend-adjusted figure.">weekend bonus not included</span>'
         : ''}
     </div>
   `;

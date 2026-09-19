@@ -2,8 +2,8 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createWeekendLookup } from '../content/weekend-lookup.js';
 
 // Minimal ranges; selectors.js also supplies a display label and a timezone.
-const AUG = { key: 'Aug 1, 2026 - Aug 31, 2026', startISO: '2026-08-01T00:00:00.000Z', endISO: '2026-08-31T23:59:59.999Z' };
-const JUL = { key: 'Jul 1, 2026 - Jul 31, 2026', startISO: '2026-07-01T00:00:00.000Z', endISO: '2026-07-31T23:59:59.999Z' };
+const AUG = { key: 'Aug 1, 2026 - Aug 31, 2026', apiStart: '2026-08-01T00:00:00.000Z', apiEnd: '2026-08-31T23:59:59.999Z' };
+const JUL = { key: 'Jul 1, 2026 - Jul 31, 2026', apiStart: '2026-07-01T00:00:00.000Z', apiEnd: '2026-07-31T23:59:59.999Z' };
 
 // A hand-resolved fetch, so overlapping requests and out-of-order landings — the
 // shape of the bug this module replaces — are expressible.

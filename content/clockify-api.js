@@ -35,15 +35,17 @@ export function getSession() {
   }
 }
 
-// All of the user's time entries overlapping [startISO, endISO].
+// The user's time entries for the selected account-local calendar range.
+// apiStart/apiEnd have Clockify's Z-suffixed format but are NOT UTC instants;
+// dateRangeBounds prepares them without shifting the selected calendar dates.
 // Throws on a non-OK response so callers can distinguish "no weekend hours"
 // from "we could not find out".
-export async function fetchTimeEntries(session, startISO, endISO) {
+export async function fetchTimeEntries(session, { apiStart, apiEnd }) {
   const entries = [];
 
   for (let page = 1; page <= MAX_PAGES; page++) {
     const url = `${API_BASE}/workspaces/${session.workspaceId}/user/${session.userId}/time-entries`
-      + `?start=${encodeURIComponent(startISO)}&end=${encodeURIComponent(endISO)}`
+      + `?start=${encodeURIComponent(apiStart)}&end=${encodeURIComponent(apiEnd)}`
       + `&page=${page}&page-size=${PAGE_SIZE}`;
 
     const res = await fetch(url, { headers: { 'X-Auth-Token': session.token } });

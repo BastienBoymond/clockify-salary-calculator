@@ -32,7 +32,7 @@ export function getDashboardAnchor(totalEl) {
 // Cache the conversion because this scraper is called on every DOM mutation.
 let lastDashboardRange = null;
 
-// The range on screen, as { key, label, startISO, endISO, timeZone }.
+// The range on screen, as { key, label, apiStart, apiEnd, timeZone }.
 // The picker itself may read "This month", but a print-only sibling always
 // carries the resolved dates ("Aug 1, 2026 - Aug 31, 2026"). Returns null if
 // the dates cannot be parsed — the caller then shows no weekend split rather
