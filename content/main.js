@@ -105,14 +105,14 @@ function trackerFullyInjected() {
 // in weekend-lookup.js; all that belongs here is the fetch and the re-render.
 
 const weekendLookup = createWeekendLookup({
-  fetchSummary: async ({ startISO, endISO, timeZone }) => {
+  fetchSummary: async (range) => {
     const session = getSession();
     // Empty for a few hundred ms while Clockify refreshes its token mid-route
     // change — a transient the lookup retries, not a permanent answer.
     if (!session) throw new Error('no Clockify session');
 
-    const entries = await fetchTimeEntries(session, startISO, endISO);
-    const { totalHours, weekendHours } = summarizeEntries(entries, timeZone);
+    const entries = await fetchTimeEntries(session, range);
+    const { totalHours, weekendHours } = summarizeEntries(entries, range.timeZone);
     return { totalHours, weekendHours };
   },
   onChange: () => { resetKeys(); evaluateAndInject(); },
@@ -314,7 +314,7 @@ async function buildInvoiceData() {
 
     if (range && session) {
       try {
-        const entries = await fetchTimeEntries(session, range.startISO, range.endISO);
+        const entries = await fetchTimeEntries(session, range);
         const summary = summarizeEntries(entries, range.timeZone);
         const agrees  = pageHours == null || Math.abs(summary.totalHours - pageHours) < 1 / 60;
         return {

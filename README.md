@@ -17,7 +17,7 @@ A Chrome extension that displays your real net take-home earnings directly on th
 - **Weekly recap widget** on the calendar page — total hours plus net/gross earnings for the displayed week, next to the Week/Day buttons
 - **Time tracker earnings** — a per-day net/gross badge next to each day group's total, plus a recap pill next to the "Week total" for the whole visible range
 - **Per-location widget toggles** in the Settings tab — independently switch each widget (dashboard card, calendar recap, tracker daily, tracker weekly) on or off; changes apply live
-- **Weekend bonus** — an extra hourly amount for Saturdays and Sundays, reflected in the tracker and calendar widgets and billed as its own "Weekend surcharge" line on the generated invoice
+- **Weekend bonus** — an extra hourly amount for Saturdays and Sundays, reflected in the dashboard, tracker, and calendar widgets and billed as its own "Weekend surcharge" line on the generated invoice
 - **Net salary calculation** with configurable social charges, professional expense deductions, and income tax
 - **Multi-currency support** with live exchange rates (via [open.er-api.com](https://open.er-api.com))
 - **Earnings simulator** in the popup with presets (1h, 1d, 1w, 1m)
@@ -47,14 +47,21 @@ breakdown, which comes from two places depending on the page:
   web app already holds in its own `localStorage` — no API key to paste — and cross-checks the
   total it computes against the one the page displays before showing anything.
 
-Dashboard and invoice date ranges use the **Clockify account's timezone**, including
-daylight-saving changes. Travelling with a computer set to a different timezone therefore
-does not shift the requested dates. If Clockify supplies no valid timezone, both the range
-and weekend calculation use the browser's timezone.
+Dashboard and invoice requests preserve the selected **local calendar dates**. Clockify
+interprets the API's `start` and `end` filters in the account's timezone even though their
+strings end in `Z` ([Clockify's explanation](https://forum.clockify.me/t/start-parameter-for-time-entries-endpoint-not-utc/776)).
+For September, the extension therefore sends `2026-09-01T00:00:00.000Z` through
+`2026-09-30T23:59:59.999Z`, without first shifting them to UTC. Clockify handles the timezone
+and daylight-saving changes; converting the filters beforehand would apply the offset twice.
 
-Entries are bucketed into days using that same timezone, not UTC: an entry starting
-`2026-07-31T22:00:00Z` is Saturday 1 August in Europe/Paris, and reading it as UTC would
-silently drop the bonus.
+Returned entry timestamps are true UTC instants. They are bucketed into days using the
+**Clockify account's timezone**: an entry starting `2026-07-31T22:00:00Z` is Saturday 1 August
+in Europe/Paris. A different browser timezone does not override that setting. If Clockify
+supplies no valid timezone, entry grouping uses the browser's timezone.
+
+When the account timezone changes after travelling, weekend eligibility follows the dates
+Clockify now displays. If the API total cannot be verified against the dashboard, the card
+says "weekend bonus not included" rather than adding an unverified amount.
 
 ## Installation
 

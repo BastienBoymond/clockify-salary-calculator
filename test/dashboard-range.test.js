@@ -19,8 +19,8 @@ describe('dashboard date range', () => {
     const range = getDashboardRange('Europe/Paris');
     expect(range.label).toBe('Sep 1, 2026 - Sep 30, 2026');
     expect(range.timeZone).toBe('Europe/Paris');
-    expect(range.startISO).toBe('2026-08-31T22:00:00.000Z');
-    expect(range.endISO).toBe('2026-09-30T21:59:59.999Z');
+    expect(range.apiStart).toBe('2026-09-01T00:00:00.000Z');
+    expect(range.apiEnd).toBe('2026-09-30T23:59:59.999Z');
   });
 
   it.each([null, 'Loading', 'Loading - Loading', 'Sep 30, 2026 - Sep 1, 2026'])('returns unknown for %s', (label) => {
